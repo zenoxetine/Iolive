@@ -1,0 +1,6 @@
+[submodule "Iolive/Vendor/glfw"]
+	path = Iolive/Vendor/glfw
+	url = https://github.com/glfw/glfw
+[submodule "Iolive/Vendor/CubismNativeFramework"]
+	path = Iolive/Vendor/CubismNativeFramework
+	url = https://github.com/Live2D/CubismNativeFramework/

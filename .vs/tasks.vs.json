@@ -1,0 +1,15 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "task-Iolive",
+      "appliesTo": "/",
+      "type": "launch"
+    },
+    {
+      "taskLabel": "task-Ioface",
+      "appliesTo": "Ioface/CMakeLists.txt",
+      "type": "launch"
+    }
+  ]
+}

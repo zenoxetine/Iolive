@@ -1,0 +1,5 @@
+CMakeBuilds/
+.vs/Iolive/
+.vs/cmake.db
+.vs/slnx.sqlite
+.vs/VSWorkspaceState.json
