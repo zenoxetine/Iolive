@@ -39,15 +39,21 @@ public:
 			delete m_ModelSetting;
 	}
 
-	void OnUpdate()
+	void OnUpdate(float deltaTime)
 	{
 		if (!_initialized || _model == NULL) return;
 
+		// load saved parameters, ex: updated binded parameters will loaded here
 		_model->LoadParameters();
+
+		if (_pose)
+		{
+			_pose->UpdateParameters(_model, deltaTime);
+		}
 
 		if (_physics)
 		{
-			_physics->Evaluate(_model, 0.02f);
+			_physics->Evaluate(_model, deltaTime);
 		}
 
 		_model->Update();

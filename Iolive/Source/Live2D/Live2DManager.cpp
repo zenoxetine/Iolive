@@ -127,7 +127,7 @@ void Live2DManager::TryDeleteModel()
 	}
 }
 
-void Live2DManager::OnUpdate()
+void Live2DManager::OnUpdate(float deltaTime)
 {
 	s_IsModelChanged = false;
 
@@ -141,7 +141,7 @@ void Live2DManager::OnUpdate()
 		}
 		s_Model2D->GetModel()->SaveParameters();
 
-		s_Model2D->OnUpdate();
+		s_Model2D->OnUpdate(deltaTime);
 	}
 }
 

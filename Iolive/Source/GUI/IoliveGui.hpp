@@ -12,6 +12,7 @@ namespace Iolive {
 		static void OnDraw();
 
 	private:
+		static void SetIoliveThemeColors();
 		static void InitWidget();
 		static void DrawAllWidget();
 

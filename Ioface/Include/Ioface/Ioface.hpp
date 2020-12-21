@@ -21,13 +21,15 @@ public:
 	void CloseCamera();
 	bool IsCameraOpened() const { return m_Cap.isOpened(); }
 
-	void ShowFrame();
-
+	void UpdateFrame();
 	void UpdateParameters();
 
+	void ShowFrame();
+	void CloseAllFrame();
+
 private:
-	void UpdateFrame();
 	std::optional<cv::Rect> DetectFirstFace(const cv::Mat& image);
+	void EstimateHeadPose(const INTRAFACE::HeadPose& headPose);
 	cv::Vec3d DrawPose(cv::Mat& img, const cv::Mat& rot, float lineL);
 
 public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Ioface/Ioface.hpp"
+#include <thread>
 
 namespace Iolive {
 	class Application
@@ -28,6 +28,11 @@ namespace Iolive {
 
 		void OnUpdate();
 		void OnRender();
+
+		//
+		// do capturing new frame until camera got closed
+		//
+		void FaceCaptureLoop();
 		
 		bool OpenCamera();
 		void CloseCamera();
@@ -36,6 +41,6 @@ namespace Iolive {
 		void BindDefaultParametersWithGui();
 
 	private:
-		Ioface m_Ioface;
+		std::thread faceCaptureThread; // face capturing thread
 	};
 }

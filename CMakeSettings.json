@@ -10,7 +10,13 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
-      "variables": []
+      "variables": [
+        {
+          "name": "IOLIVE_DEBUG",
+          "value": "true",
+          "type": "BOOL"
+        }
+      ]
     },
     {
       "name": "x64-Release",
@@ -21,7 +27,14 @@
       "installRoot": "${projectDir}\\CMakeBuilds\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "IOLIVE_DEBUG",
+          "value": "False",
+          "type": "BOOL"
+        }
+      ]
     }
   ]
 }

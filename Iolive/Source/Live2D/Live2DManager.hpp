@@ -18,7 +18,7 @@ public:
 	static bool IsModelChanged() { return s_IsModelChanged; }
 	static bool IsModelInitialized();
 
-	static void OnUpdate();
+	static void OnUpdate(float deltaTime);
 	static void OnDraw(int width, int height);
 
 	static void SetParameterBinding(int index, float* ptrValue);

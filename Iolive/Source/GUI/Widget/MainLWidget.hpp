@@ -2,8 +2,8 @@
 
 #include <imgui.h>
 #include "Component/ParameterValue.hpp"
+#include "Component/Checkbox.hpp"
 #include "../../Live2D/Live2DManager.hpp"
-#include "../../Application.hpp"
 #include "../Utility.hpp"
 #include <string>
 #include <map>
@@ -13,26 +13,31 @@ class MainLeftWidget
 public:
 	MainLeftWidget()
 	  :	m_ParamValue(ParameterValue()),
-		m_CameraChecked(false),
-		m_CameraCheckboxChanged(false)
+		m_FaceCapture(Checkbox("Face Capture"))
+		// m_ShowFrame(Checkbox("Show Frame"))
 	{
 	}
 
 	void DoDraw()
 	{
+		ImGuiIO& io = ImGui::GetIO();
+		// ImGui::SetNextWindowSize(ImVec2(300, io.DisplaySize.y * 1.01), ImGuiCond_Always);
 		{
-			ImGui::Begin("Left Widget");
+			ImGui::Begin("Ioleft Widget");
 
+			// [Checkbox] Face capture
+			m_FaceCapture.DoDraw();
+
+			// [Checkbox] Show frame
+			// m_ShowFrame.DoDraw();
+			
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 14.f);
 			// [Button] Open model
-			if (ImGui::Button("Open Model"))
+			if (ImGui::Button("Open Model", ImVec2(256, 32)))
 				OpenNewModel();
+			ImGui::PopStyleVar();
 
-			// [Checkbox] Open camera
-			m_CameraCheckboxChanged = false;
-			if (ImGui::Checkbox("Open Camera", &m_CameraChecked))
-				m_CameraCheckboxChanged = true;
-
-			// [Parameter Gui]
+			// [ParamGui]
 			m_ParamValue.DoDraw();
 
 			ImGui::End();
@@ -40,10 +45,8 @@ public:
 	}
 
 	ParameterValue& GetParameterGui() { return m_ParamValue; }
-
-	bool CameraCheckboxChanged() const { return m_CameraCheckboxChanged; }
-	bool IsCameraChecked() const { return m_CameraChecked; }
-	void SetCameraChecked(bool checked) { m_CameraChecked = checked; }
+	Checkbox& GetCheckboxFaceCapture() { return m_FaceCapture; }
+	// Checkbox& GetCheckboxShowFrame() { return m_ShowFrame; }
 
 private:
 	// do action
@@ -76,8 +79,6 @@ private:
 private:
 	// private member
 	ParameterValue m_ParamValue;
-	bool m_CameraChecked;
-
-	// flags
-	bool m_CameraCheckboxChanged;
+	Checkbox m_FaceCapture;
+	// Checkbox m_ShowFrame;
 };

@@ -15,17 +15,21 @@ public:
 
 	void DoDraw()
 	{
-		if (GetParameterCount() > 0)
+		if (GetParameterCount() < 1) return;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
+		ImGui::PushItemWidth(150);
+		size_t paramIndex = 0;
+		for (auto&[key, value] : m_Parameters)
 		{
-			size_t paramIndex = 0;
-			for (auto&[key, value] : m_Parameters)
-			{
-				ImGui::SliderFloat(key, &value,
-					m_ParamMinMax[paramIndex][0], m_ParamMinMax[paramIndex][1]
-				);
-				paramIndex++;
-			}
+			ImGui::SliderFloat(key, &value,
+				m_ParamMinMax[paramIndex][0], m_ParamMinMax[paramIndex][1],
+				"%.2f"
+			);
+			paramIndex++;
 		}
+		ImGui::PopItemWidth();
+		ImGui::PopStyleVar();
 	}
 
 	void SetParameterMap(const std::map<const char*, float>& paramMap, const std::vector<std::array<float, 2>>& paramMinMax)
@@ -35,24 +39,13 @@ public:
 		// assign and then don't use paramMap
 		m_Parameters = paramMap;
 
-		// vector of pointer value of m_Parameters
+		// vector of pointer to m_Parameters second value
 		m_ParametersPtrValue.reserve(GetParameterCount());
 		for (auto& [_key, value] : m_Parameters)
 			m_ParametersPtrValue.push_back(&value);
 
 		m_ParamMinMax = paramMinMax;
 	}
-
-	/* sloowww, so i made a vector for pointer value only
-	float* GetPtrValueByIndex(int index)
-	{
-		size_t paramIndex = 0;
-		for (auto& [_key, value] : m_Parameters)
-			if (paramIndex == index)
-				return &value;
-			paramIndex++;
-		return nullptr;
-	}*/
 
 	float* GetPtrValueByIndex(int index)
 	{

@@ -15,7 +15,7 @@ project(Iolive)
 OPTION(IOLIVE_DEBUG
 	"ON  = window + console
 	 OFF = window only"
-	OFF
+	ON
 )
 message("IOLIVE_DEBUG = ${IOLIVE_DEBUG}")
 

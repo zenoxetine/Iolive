@@ -5,10 +5,8 @@ namespace Iolive {
 	void Window::Create(const char* title, int width, int height)
 	{
 		glfwInit();
+
 		s_Window = glfwCreateWindow(width, height, title, NULL, NULL);
-		glfwSetWindowCloseCallback(s_Window, [](GLFWwindow* window) {
-			glfwSetWindowShouldClose(window, GLFW_TRUE);
-		});
 		SetWindowVisible(false);
 
 		// create window context first
@@ -37,12 +35,20 @@ namespace Iolive {
 
 	void Window::SwapWindow()
 	{
+		UpdateDeltaTime();
 		glfwSwapBuffers(s_Window);
 	}
 
 	void Window::SetWindowVisible(bool visible)
 	{
 		glfwSetWindowAttrib(s_Window, GLFW_VISIBLE, visible);
+	}
+
+	void Window::UpdateDeltaTime()
+	{
+		s_currentFrame = glfwGetTime();
+		s_deltaTime = s_currentFrame - s_lastFrame;
+		s_lastFrame = s_currentFrame;
 	}
 
 } // namespace Iolive

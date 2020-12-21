@@ -58,7 +58,8 @@ PRIVATE
 	# header files
 	Source/Application.hpp
 	Source/Window.hpp
-	Source/Macro.hpp
+	Source/IofaceBridge.hpp
+	Source/MathUtils.hpp
 	Source/Live2D/Live2DManager.hpp
 	Source/Live2D/Model2D.hpp
 	Source/Live2D/Utility.hpp
@@ -69,6 +70,7 @@ PRIVATE
 	Source/GUI/Widget/MainLWidget.hpp
 	Source/GUI/Widget/MainRWidget.hpp
 	Source/GUI/Widget/Component/ParameterValue.hpp
+	Source/GUI/Widget/Component/Checkbox.hpp
 
 	# ImGui file
 	${IMGUI_SOURCES}
@@ -89,4 +91,8 @@ PRIVATE
 	glew_s	  # static glew
 	glfw
 	Framework # cubism framework
+)
+
+add_custom_command(TARGET Iolive POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Assets
 )

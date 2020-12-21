@@ -21,8 +21,15 @@ namespace Iolive {
 		static void GetWindowSize(int* outWidth, int* outHeight) { glfwGetWindowSize(s_Window, outWidth, outHeight); }
 		static GLFWwindow* GetWindow() { return s_Window; }
 
+		static void UpdateDeltaTime();
+		static double GetDeltaTime() { return s_deltaTime; }
+
 	private:
 		inline static GLFWwindow* s_Window;
+
+		inline static double s_currentFrame = 0.0;
+		inline static double s_lastFrame = 0.0;
+		inline static double s_deltaTime = 0.002;
 	};
 
 } // namespace Iolive

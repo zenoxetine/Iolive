@@ -46,12 +46,9 @@ bool Ioface::OpenCamera(int deviceId)
 	return m_Cap.isOpened();
 }
 
-//
-// close the camera if opened
-//
 void Ioface::CloseCamera()
 {
-	cv::destroyAllWindows();
+	CloseAllFrame();
 	if (m_Cap.isOpened())
 		m_Cap.release();
 }
@@ -62,17 +59,11 @@ void Ioface::UpdateFrame()
 	m_Cap >> m_Frame;
 }
 
-void Ioface::ShowFrame()
-{
-	if (!m_Cap.isOpened() || m_Frame.empty()) return;
-	cv::imshow("Ioface frame", m_Frame);
-}
-
 void Ioface::UpdateParameters()
 {
 	if (!m_Cap.isOpened() || !m_Initialized) return;
 
-	UpdateFrame();
+	// UpdateFrame();
 	if (m_Frame.empty()) return;
 
 	float score = 0.0f;
@@ -115,16 +106,32 @@ void Ioface::UpdateParameters()
 		// head pose estimation
 		INTRAFACE::HeadPose headPose;
 		m_FaceAlignment->EstimateHeadPose(landmarks, headPose);
-		cv::Vec3d eav = DrawPose(m_Frame, headPose.rot, 50);
-		angleY = -eav[0];
-		angleX = eav[1];
-		angleZ = -eav[2];
+		EstimateHeadPose(headPose);
 	}
 	else
 	{
 		// don't track, because the landmarks is not reliable
 		doTrackLandmarks = false;
 	}
+}
+
+void Ioface::EstimateHeadPose(const INTRAFACE::HeadPose& headPose)
+{
+	cv::Vec3d eav = DrawPose(m_Frame, headPose.rot, 50);
+	this->angleY = -eav[0];
+	this->angleX = eav[1];
+	this->angleZ = -eav[2];
+}
+
+void Ioface::ShowFrame()
+{
+	if (!m_Cap.isOpened() || m_Frame.empty()) return;
+	// cv::imshow("Ioface frame", m_Frame);
+}
+
+void Ioface::CloseAllFrame()
+{
+	cv::destroyAllWindows();
 }
 
 std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
@@ -134,7 +141,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		1.2,
 		2,
 		0,
-		cv::Size(169, 169)
+		cv::Size(169, 169) // the bigger the lighter, but can't see smoll face
 	);
 
 	if (facesRect.size() > 0)
@@ -145,7 +152,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 
 cv::Vec3d Ioface::DrawPose(cv::Mat& img, const cv::Mat& rot, float lineL)
 {
-	int loc[2] = { 70, 70 };
+	/*int loc[2] = { 70, 70 };
 	int thickness = 2;
 	int lineType = 8;
 
@@ -160,18 +167,19 @@ cv::Vec3d Ioface::DrawPose(cv::Mat& img, const cv::Mat& rot, float lineL)
 
 	line(img, p0, cv::Point(P.at<float>(0, 1), P.at<float>(1, 1)), cv::Scalar(255, 0, 0), thickness, lineType);
 	line(img, p0, cv::Point(P.at<float>(0, 2), P.at<float>(1, 2)), cv::Scalar(0, 255, 0), thickness, lineType);
-	line(img, p0, cv::Point(P.at<float>(0, 3), P.at<float>(1, 3)), cv::Scalar(0, 0, 255), thickness, lineType);
+	line(img, p0, cv::Point(P.at<float>(0, 3), P.at<float>(1, 3)), cv::Scalar(0, 0, 255), thickness, lineType);*/
 
 	cv::Vec3d eav;
 	cv::Mat tmp, tmp1, tmp2, tmp3, tmp4, tmp5;
 	double _pm[12] = { rot.at<float>(0, 0), rot.at<float>(0, 1),rot.at<float>(0, 2), 0,
-						rot.at<float>(1, 0), rot.at<float>(1, 1),rot.at<float>(1, 2),0,
-						rot.at<float>(2, 0),rot.at<float>(2, 1),rot.at<float>(2, 2),0 };
+						rot.at<float>(1, 0), rot.at<float>(1, 1),rot.at<float>(1, 2), 0,
+						rot.at<float>(2, 0),rot.at<float>(2, 1),rot.at<float>(2, 2), 0 };
 	cv::decomposeProjectionMatrix(cv::Mat(3, 4, CV_64FC1, _pm), tmp, tmp1, tmp2, tmp3, tmp4, tmp5, eav);
 
-	/* eav[0] : Pitch
-	   eav[1] : Yaw
-	   eav[2] : Roll
+	/*
+		eav[0] : Pitch
+		eav[1] : Yaw
+		eav[2] : Roll
 	*/
 	return eav;
 }
