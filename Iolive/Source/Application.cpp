@@ -11,6 +11,7 @@
 
 namespace Iolive {
 	Application::Application()
+	  :	flags_StopCapture(true)
 	{
 		Window::Create(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 		IoliveGui::Init();
@@ -84,7 +85,7 @@ namespace Iolive {
 
 	void Application::FaceCaptureLoop()
 	{
-		while (IofaceBridge::IsCameraOpened())
+		while (!flags_StopCapture)
 		{
 			IofaceBridge::UpdateIoface(); // capturing new frame from camera
 		}
@@ -95,6 +96,7 @@ namespace Iolive {
 		if (IofaceBridge::OpenCamera(0))
 		{
 			// create separate thread for face capture loop
+			flags_StopCapture = false;
 			faceCaptureThread = std::thread(&Application::FaceCaptureLoop, this);
 
 			// if model was opened,
@@ -110,12 +112,13 @@ namespace Iolive {
 
 	void Application::CloseCamera()
 	{
-		// close camera
-		IofaceBridge::CloseCamera();
-
-		// wait faceCaptureThread to stop
+		// tell faceCaptureThread to break the loop
+		flags_StopCapture = true;
 		if (faceCaptureThread.joinable())
 			faceCaptureThread.join();
+
+		// close camera
+		IofaceBridge::CloseCamera();
 
 		if (Live2DManager::IsModelInitialized())
 		{

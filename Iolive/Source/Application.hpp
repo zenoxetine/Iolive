@@ -42,5 +42,8 @@ namespace Iolive {
 
 	private:
 		std::thread faceCaptureThread; // face capturing thread
+
+		// just a flags
+		bool flags_StopCapture;
 	};
 }
