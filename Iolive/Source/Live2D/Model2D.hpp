@@ -9,6 +9,7 @@
 #include <Rendering/CubismRenderer.hpp>
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
 #include <Id/CubismIdManager.hpp>
+#include <Id/CubismId.hpp>
 #include "Utility.hpp"
 #include "Component/TextureManager.hpp"
 #include <string>
@@ -43,8 +44,13 @@ public:
 	{
 		if (!_initialized || _model == NULL) return;
 
-		// load saved parameters, ex: updated binded parameters will loaded here
+		// load saved parameters, ex: updated binded parameters will be loaded here
 		_model->LoadParameters();
+
+		/*if (_eyeBlink)
+		{
+			_eyeBlink->UpdateParameters(_model, deltaTime);
+		}*/
 
 		if (_pose)
 		{
@@ -168,6 +174,8 @@ private:
 			return false;
 		}
 
+		SetupModelParameters();
+
 		if (textureErrFlags)
 		{
 			return false;
@@ -196,11 +204,42 @@ private:
 		return true;
 	}
 
+	void SetupModelParameters()
+	{
+		CubismIdHandle idParamEyeLOpen;
+		CubismIdHandle idParamEyeROpen;
+
+		csmVector<CubismIdHandle> _ids = GetModel()->GetParameterIdHandles();
+		for (csmUint32 i = 0; i < _ids.GetSize(); ++i)
+		{
+			csmString Id = _ids[i]->GetString();
+			if (Id == "ParamEyeLOpen" || Id == "PARAM_EYE_L_OPEN")	idParamEyeLOpen = _ids[i];
+			else if (Id == "ParamEyeROpen" || Id == "PARAM_EYE_R_OPEN")	idParamEyeROpen = _ids[i];
+		}
+
+		// setup eyeblink
+		_eyeBlink = CubismEyeBlink::Create(m_ModelSetting);
+		if (m_ModelSetting->GetEyeBlinkParameterCount() > 0)
+		{
+			// eyeblink using parameter from model setting
+			for (csmInt32 i = 0; i < m_ModelSetting->GetEyeBlinkParameterCount(); i++)
+				m_EyeBlinkIds.PushBack(m_ModelSetting->GetEyeBlinkParameterId(i));
+		}
+		else {
+			// eyeblink using default eye parameter
+			m_EyeBlinkIds.PushBack(idParamEyeLOpen);
+			m_EyeBlinkIds.PushBack(idParamEyeROpen);
+		}
+		_eyeBlink->SetParameterIds(m_EyeBlinkIds);
+	}
+
 private:
-	std::wstring m_ModelDir;		// absolute model path
-	std::wstring m_ModelFileName;	// model file name
+	std::wstring m_ModelDir;       // absolute model path
+	std::wstring m_ModelFileName;  // model file name
 
 	ICubismModelSetting* m_ModelSetting;
-	CubismMatrix44 m_ProjectionMatrix;
 	TextureManager m_TextureManager;
+	CubismMatrix44 m_ProjectionMatrix;
+
+	csmVector<CubismIdHandle> m_EyeBlinkIds;
 };

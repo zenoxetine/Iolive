@@ -21,24 +21,42 @@ public:
 	void DoDraw()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		// ImGui::SetNextWindowSize(ImVec2(300, io.DisplaySize.y * 1.01), ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(300, io.DisplaySize.y), ImGuiCond_Once);
 		{
 			ImGui::Begin("Ioleft Widget");
 
-			// [Checkbox] Face capture
-			m_FaceCapture.DoDraw();
+			if (ImGui::BeginTabBar("Ioleft TabBar", ImGuiTabBarFlags_None))
+			{
+				if (ImGui::BeginTabItem("Model"))
+				{
+					// [Button] Open model
+					ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 14.f);
+					if (ImGui::Button("Open Model", ImVec2(256, 32)))
+						OpenNewModel();
+					ImGui::PopStyleVar();
 
-			// [Checkbox] Show frame
-			// m_ShowFrame.DoDraw();
-			
-			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 14.f);
-			// [Button] Open model
-			if (ImGui::Button("Open Model", ImVec2(256, 32)))
-				OpenNewModel();
-			ImGui::PopStyleVar();
+					// [ParamGui]
+					m_ParamValue.DoDraw();
+					ImGui::EndTabItem();
+				}
 
-			// [ParamGui]
-			m_ParamValue.DoDraw();
+				if (ImGui::BeginTabItem("Face Capture"))
+				{
+					// [Checkbox] Face capture
+					m_FaceCapture.DoDraw();
+
+					// [Checkbox] Show frame
+					// m_ShowFrame.DoDraw();
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Settings"))
+				{
+					ImGui::Text("fps: %.0f", io.Framerate);
+					ImGui::EndTabItem();
+				}
+				ImGui::EndTabBar();
+			}
 
 			ImGui::End();
 		}

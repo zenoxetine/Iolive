@@ -5,8 +5,8 @@
 #include "GUI/IoliveGui.hpp"
 #include "Live2D/Live2DManager.hpp"
 
-#define	WINDOW_WIDTH 920
-#define WINDOW_HEIGHT 700
+#define WINDOW_WIDTH 555  // HAHAHA
+#define WINDOW_HEIGHT 666 // HIIII
 #define WINDOW_TITLE "Iolive"
 
 namespace Iolive {
@@ -54,7 +54,7 @@ namespace Iolive {
 			}
 		}
 
-		IofaceBridge::Update();
+		IofaceBridge::DoOptimizeParameters();
 
 		if (Live2DManager::IsModelChanged() && IofaceBridge::IsCameraOpened())
 		{
@@ -86,7 +86,7 @@ namespace Iolive {
 	{
 		while (IofaceBridge::IsCameraOpened())
 		{
-			IofaceBridge::UpdateFrame(); // capturing new frame from camera
+			IofaceBridge::UpdateIoface(); // capturing new frame from camera
 		}
 	}
 
@@ -133,6 +133,14 @@ namespace Iolive {
 			Live2DManager::SetParameterBinding(paramIndex.ParamAngleY, &(IofaceBridge::Parameters.AngleY));
 		if (paramIndex.ParamAngleZ > -1)
 			Live2DManager::SetParameterBinding(paramIndex.ParamAngleZ, &(IofaceBridge::Parameters.AngleZ));
+		if (paramIndex.ParamEyeLOpen > -1)
+			Live2DManager::SetParameterBinding(paramIndex.ParamEyeLOpen, &(IofaceBridge::Parameters.EyeLOpen));
+		if (paramIndex.ParamEyeROpen > -1)
+			Live2DManager::SetParameterBinding(paramIndex.ParamEyeROpen, &(IofaceBridge::Parameters.EyeROpen));
+		if (paramIndex.ParamMouthOpenY > -1)
+			Live2DManager::SetParameterBinding(paramIndex.ParamMouthOpenY, &(IofaceBridge::Parameters.MouthOpenY));
+		if (paramIndex.ParamMouthForm > -1)
+			Live2DManager::SetParameterBinding(paramIndex.ParamMouthForm, &(IofaceBridge::Parameters.MouthForm));
 	}
 
 	void Application::BindDefaultParametersWithGui()
@@ -155,6 +163,30 @@ namespace Iolive {
 		{
 			float* ptrGuiParamAngleZ = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamAngleZ);
 			Live2DManager::SetParameterBinding(paramIndex.ParamAngleZ, ptrGuiParamAngleZ);
+		}
+		
+		if (paramIndex.ParamEyeLOpen > -1)
+		{
+			float* ptrGuiParamEyeLOpen = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamEyeLOpen);
+			Live2DManager::SetParameterBinding(paramIndex.ParamEyeLOpen, ptrGuiParamEyeLOpen);
+		}
+		
+		if (paramIndex.ParamEyeROpen > -1)
+		{
+			float* ptrGuiParamEyeROpen = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamEyeROpen);
+			Live2DManager::SetParameterBinding(paramIndex.ParamEyeROpen, ptrGuiParamEyeROpen);
+		}
+		
+		if (paramIndex.ParamMouthOpenY > -1)
+		{
+			float* ptrGuiParamMouthOpenY = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamMouthOpenY);
+			Live2DManager::SetParameterBinding(paramIndex.ParamMouthOpenY, ptrGuiParamMouthOpenY);
+		}
+		
+		if (paramIndex.ParamMouthForm > -1)
+		{
+			float* ptrGuiParamMouthForm = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamMouthForm);
+			Live2DManager::SetParameterBinding(paramIndex.ParamMouthForm, ptrGuiParamMouthForm);
 		}
 	}
 }

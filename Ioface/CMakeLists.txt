@@ -5,8 +5,10 @@ set(INTRAFACE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/intraface)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(dFLAGS "d")
+	add_definitions(-DIOFACE_DEBUG=1)
 else()
 	set(dFLAGS "")
+	add_definitions(-DIOFACE_DEBUG=0)
 endif()
 
 set(OPENCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/opencv-3.0.0)

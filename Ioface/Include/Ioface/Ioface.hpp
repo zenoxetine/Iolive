@@ -10,6 +10,7 @@
 #include "intraface/XXDescriptor.h"
 #include <memory>
 #include <optional>
+#include <tuple>
 
 class Ioface
 {
@@ -21,31 +22,42 @@ public:
 	void CloseCamera();
 	bool IsCameraOpened() const { return m_Cap.isOpened(); }
 
-	void UpdateFrame();
-	void UpdateParameters();
+	void UpdateAll();
 
 	void ShowFrame();
+	void DrawPose(float lineL);
 	void CloseAllFrame();
 
 private:
+	void UpdateFrame();
+	void UpdateParameters();
+	void DoUpdateParameters();
+
 	std::optional<cv::Rect> DetectFirstFace(const cv::Mat& image);
 	void EstimateHeadPose(const INTRAFACE::HeadPose& headPose);
-	cv::Vec3d DrawPose(cv::Mat& img, const cv::Mat& rot, float lineL);
+	void EstimateFeatureDistance(const cv::Mat& landmarks);
+	std::tuple<float, float> GetEyeAspectRatio(const cv::Mat& landmarks);
 
 public:
 	// parameter properties
-	float angleX;
-	float angleY;
-	float angleZ;
+	float AngleX = 0.0f;
+	float AngleY = 0.0f;
+	float AngleZ = 0.0f;
+	float LeftEAR = 0.3f;
+	float RightEAR = 0.3f;
+	float EAR = 0.2f; // average of left & right EAR
+	float MouthOpenY = 0.0f;
+	float MouthForm = 1.0f;
 
 private:
 	bool m_Initialized;
 	cv::VideoCapture m_Cap;
 	cv::Mat m_Frame;
-
+	
 	cv::CascadeClassifier m_FaceCascade;
 	
 	std::unique_ptr<INTRAFACE::XXDescriptor> m_XXD;
 	std::unique_ptr<INTRAFACE::FaceAlignment> m_FaceAlignment;
-
+	INTRAFACE::HeadPose m_HeadPose;
+	cv::Mat m_Landmarks; // 49 facial landmarks
 };

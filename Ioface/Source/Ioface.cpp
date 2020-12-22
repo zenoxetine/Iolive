@@ -1,9 +1,13 @@
 #include "Ioface/Ioface.hpp"
+#include <iostream>
 #include <vector>
+#include <cmath>
+
+#define INGFO std::cout << "[IOFACE][INFO] "
+#define L2Norm(p1, p2) std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
 
 Ioface::Ioface()
-  :	m_Initialized(false),
-	angleX(0), angleY(0), angleZ(0)
+  :	m_Initialized(false)
 {
 	const char* fa_detection_model = "./Assets/models/DetectionModel-v1.5.bin";
 	const char* fa_tracking_model = "./Assets/models/TrackingModel-v1.10.bin";
@@ -40,10 +44,7 @@ bool Ioface::OpenCamera(int deviceId)
 	if (!m_Initialized)
 		return false;
 
-	CloseCamera();
-	
-	m_Cap.open(deviceId);
-	return m_Cap.isOpened();
+	return m_Cap.open(deviceId);
 }
 
 void Ioface::CloseCamera()
@@ -53,10 +54,16 @@ void Ioface::CloseCamera()
 		m_Cap.release();
 }
 
+void Ioface::UpdateAll()
+{
+	Ioface::UpdateFrame();
+	Ioface::UpdateParameters();
+}
+
 void Ioface::UpdateFrame()
 {
-	if (!m_Cap.isOpened()) return;
-	m_Cap >> m_Frame;
+	if (m_Cap.isOpened())
+		m_Cap.read(m_Frame);
 }
 
 void Ioface::UpdateParameters()
@@ -67,16 +74,15 @@ void Ioface::UpdateParameters()
 	if (m_Frame.empty()) return;
 
 	float score = 0.0f;
-	static cv::Mat landmarks;
 	static bool doTrackLandmarks = false;
 
 	if (doTrackLandmarks)
 	{
 		// trying to track new accurate landmarks based on previous landmarks
 		cv::Mat trackedLandmarks;
-		if (m_FaceAlignment->Track(m_Frame, landmarks, trackedLandmarks, score) == INTRAFACE::IF_OK)
+		if (m_FaceAlignment->Track(m_Frame, m_Landmarks, trackedLandmarks, score) == INTRAFACE::IF_OK)
 		{
-			landmarks = trackedLandmarks;
+			m_Landmarks = trackedLandmarks;
 		}
 	}
 	else
@@ -85,28 +91,16 @@ void Ioface::UpdateParameters()
 		if (!faceRect.has_value()) return; // check if there's a face in the frame
 
 		// detect face landmarks
-		if (m_FaceAlignment->Detect(m_Frame, faceRect.value(), landmarks, score) == INTRAFACE::IF_OK)
+		if (m_FaceAlignment->Detect(m_Frame, faceRect.value(), m_Landmarks, score) == INTRAFACE::IF_OK)
 		{
-			// got accurated landmarks, do follow them in the next frame
+			// got accurate Landmarks, do follow them in the next frame
 			doTrackLandmarks = true;
 		}
 	}
 
 	if (score > 0.5)
 	{
-		// draw facial landmarks to the frame
-		for (int i = 0; i < landmarks.cols; i++)
-		{
-			cv::circle(m_Frame,
-				cv::Point((int)landmarks.at<float>(0, i), (int)landmarks.at<float>(1, i)),
-				1, cv::Scalar(0, 255, 0), -1
-			);
-		}
-
-		// head pose estimation
-		INTRAFACE::HeadPose headPose;
-		m_FaceAlignment->EstimateHeadPose(landmarks, headPose);
-		EstimateHeadPose(headPose);
+		DoUpdateParameters();
 	}
 	else
 	{
@@ -115,12 +109,87 @@ void Ioface::UpdateParameters()
 	}
 }
 
+void Ioface::DoUpdateParameters()
+{
+	// head pose estimation
+	m_FaceAlignment->EstimateHeadPose(m_Landmarks, m_HeadPose);
+	EstimateHeadPose(m_HeadPose);
+
+	EstimateFeatureDistance(m_Landmarks);
+}
+
 void Ioface::EstimateHeadPose(const INTRAFACE::HeadPose& headPose)
 {
-	cv::Vec3d eav = DrawPose(m_Frame, headPose.rot, 50);
-	this->angleY = -eav[0];
-	this->angleX = eav[1];
-	this->angleZ = -eav[2];
+	cv::Vec3d eav;
+	cv::Mat tmp, tmp1, tmp2, tmp3, tmp4, tmp5;
+	double _pm[12] = { headPose.rot.at<float>(0, 0), headPose.rot.at<float>(0, 1),headPose.rot.at<float>(0, 2), 0,
+						headPose.rot.at<float>(1, 0), headPose.rot.at<float>(1, 1),headPose.rot.at<float>(1, 2), 0,
+						headPose.rot.at<float>(2, 0),headPose.rot.at<float>(2, 1),headPose.rot.at<float>(2, 2), 0 };
+	cv::decomposeProjectionMatrix(cv::Mat(3, 4, CV_64FC1, _pm), tmp, tmp1, tmp2, tmp3, tmp4, tmp5, eav);
+
+	/*
+		eav[0] : Pitch
+		eav[1] : Yaw
+		eav[2] : Roll
+	*/
+
+	this->AngleY = -eav[0];
+	this->AngleX = eav[1];
+	this->AngleZ = -eav[2];
+}
+
+void Ioface::EstimateFeatureDistance(const cv::Mat& landmarks)
+{
+	// calculate eye aspect ratio
+	auto [_leftEAR, _rightEAR] = GetEyeAspectRatio(landmarks);
+	this->LeftEAR = _leftEAR;
+	this->RightEAR = _rightEAR;
+	this->EAR = (LeftEAR + RightEAR) / 2.0f;
+
+	// mouth open y (distance between point 44 & 47 (top & bottom mouth))
+	cv::Point pCenterMouthTop = cv::Point(landmarks.at<float>(0, 44), landmarks.at<float>(1, 44));
+	cv::Point pCenterMouthBottom = cv::Point(landmarks.at<float>(0, 47), landmarks.at<float>(1, 47));
+	this->MouthOpenY = L2Norm(pCenterMouthTop, pCenterMouthBottom);
+
+	// mouth form (distance between point 31 & 37 (left & right mouth))
+	cv::Point pMouthLeft = cv::Point(landmarks.at<float>(0, 31), landmarks.at<float>(1, 31));
+	cv::Point pMouthRight = cv::Point(landmarks.at<float>(0, 37), landmarks.at<float>(1, 37));
+	this->MouthForm = L2Norm(pMouthLeft, pMouthRight);
+
+
+}
+
+
+std::tuple<float, float> Ioface::GetEyeAspectRatio(const cv::Mat& landmarks)
+{
+	/* Reference: https://www.pyimagesearch.com/2017/04/24/eye-blink-detection-opencv-python-dlib/
+	*/
+
+	// left eye
+	cv::Point l_eye_top_v1 = cv::Point(landmarks.at<float>(0, 20), landmarks.at<float>(1, 20)); // vertical 1
+	cv::Point l_eye_bottom_v1 = cv::Point(landmarks.at<float>(0, 24), landmarks.at<float>(1, 24));
+	cv::Point l_eye_top_v2 = cv::Point(landmarks.at<float>(0, 21), landmarks.at<float>(1, 21)); // vertical 2
+	cv::Point l_eye_bottom_v2 = cv::Point(landmarks.at<float>(0, 23), landmarks.at<float>(1, 23));
+	cv::Point l_eye_hl = cv::Point(landmarks.at<float>(0, 19), landmarks.at<float>(1, 19)); // horizontal left
+	cv::Point l_eye_hr = cv::Point(landmarks.at<float>(0, 22), landmarks.at<float>(1, 22)); // horizontal right
+	float l_eye_v1_range = L2Norm(l_eye_top_v1, l_eye_bottom_v1);
+	float l_eye_v2_range = L2Norm(l_eye_top_v2, l_eye_bottom_v2);
+	float l_eye_h_range = L2Norm(l_eye_hl, l_eye_hr);
+	float _leftEAR = (l_eye_v1_range + l_eye_v2_range) / (2.0f * l_eye_h_range);
+
+	// right eye
+	cv::Point r_eye_top_v1 = cv::Point(landmarks.at<float>(0, 26), landmarks.at<float>(1, 26));
+	cv::Point r_eye_bottom_v1 = cv::Point(landmarks.at<float>(0, 30), landmarks.at<float>(1, 30));
+	cv::Point r_eye_top_v2 = cv::Point(landmarks.at<float>(0, 27), landmarks.at<float>(1, 27));
+	cv::Point r_eye_bottom_v2 = cv::Point(landmarks.at<float>(0, 29), landmarks.at<float>(1, 29));
+	cv::Point r_eye_hl = cv::Point(landmarks.at<float>(0, 25), landmarks.at<float>(1, 25));
+	cv::Point r_eye_hr = cv::Point(landmarks.at<float>(0, 28), landmarks.at<float>(1, 28));
+	float r_eye_v1_range = L2Norm(r_eye_top_v1, r_eye_bottom_v1);
+	float r_eye_v2_range = L2Norm(r_eye_top_v2, r_eye_bottom_v2);
+	float r_eye_h_range = L2Norm(r_eye_hl, r_eye_hr);
+	float _rightEAR = (r_eye_v1_range + r_eye_v2_range) / (2.0f * r_eye_h_range);
+
+	return { _leftEAR, _rightEAR };
 }
 
 void Ioface::ShowFrame()
@@ -141,7 +210,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		1.2,
 		2,
 		0,
-		cv::Size(169, 169) // the bigger the lighter, but can't see smoll face
+		cv::Size(150, 150) // the bigger the lighter, but can't see smoll face
 	);
 
 	if (facesRect.size() > 0)
@@ -150,9 +219,9 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		return std::nullopt;
 }
 
-cv::Vec3d Ioface::DrawPose(cv::Mat& img, const cv::Mat& rot, float lineL)
+void Ioface::DrawPose(float lineL)
 {
-	/*int loc[2] = { 70, 70 };
+	int loc[2] = { 70, 70 };
 	int thickness = 2;
 	int lineType = 8;
 
@@ -160,26 +229,12 @@ cv::Vec3d Ioface::DrawPose(cv::Mat& img, const cv::Mat& rot, float lineL)
 		0, lineL, 0, 0,
 		0, 0, -lineL, 0,
 		0, 0, 0, -lineL);
-	P = rot.rowRange(0, 2) * P;
+	P = m_HeadPose.rot.rowRange(0, 2) * P;
 	P.row(0) += loc[0];
 	P.row(1) += loc[1];
 	cv::Point p0(P.at<float>(0, 0), P.at<float>(1, 0));
 
-	line(img, p0, cv::Point(P.at<float>(0, 1), P.at<float>(1, 1)), cv::Scalar(255, 0, 0), thickness, lineType);
-	line(img, p0, cv::Point(P.at<float>(0, 2), P.at<float>(1, 2)), cv::Scalar(0, 255, 0), thickness, lineType);
-	line(img, p0, cv::Point(P.at<float>(0, 3), P.at<float>(1, 3)), cv::Scalar(0, 0, 255), thickness, lineType);*/
-
-	cv::Vec3d eav;
-	cv::Mat tmp, tmp1, tmp2, tmp3, tmp4, tmp5;
-	double _pm[12] = { rot.at<float>(0, 0), rot.at<float>(0, 1),rot.at<float>(0, 2), 0,
-						rot.at<float>(1, 0), rot.at<float>(1, 1),rot.at<float>(1, 2), 0,
-						rot.at<float>(2, 0),rot.at<float>(2, 1),rot.at<float>(2, 2), 0 };
-	cv::decomposeProjectionMatrix(cv::Mat(3, 4, CV_64FC1, _pm), tmp, tmp1, tmp2, tmp3, tmp4, tmp5, eav);
-
-	/*
-		eav[0] : Pitch
-		eav[1] : Yaw
-		eav[2] : Roll
-	*/
-	return eav;
+	line(m_Frame, p0, cv::Point(P.at<float>(0, 1), P.at<float>(1, 1)), cv::Scalar(255, 0, 0), thickness, lineType);
+	line(m_Frame, p0, cv::Point(P.at<float>(0, 2), P.at<float>(1, 2)), cv::Scalar(0, 255, 0), thickness, lineType);
+	line(m_Frame, p0, cv::Point(P.at<float>(0, 3), P.at<float>(1, 3)), cv::Scalar(0, 0, 255), thickness, lineType);
 }

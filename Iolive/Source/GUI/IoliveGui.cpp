@@ -14,7 +14,7 @@ namespace Iolive {
 		ImGui::CreateContext();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;	// Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
 		io.IniFilename = NULL; // don't create file .ini
 		
@@ -80,11 +80,12 @@ namespace Iolive {
 
 	void IoliveGui::SetIoliveThemeColors()
 	{
-		// create a good imgui style
+		// make a good imgui style here
 
         /*ImGuiStyle* style = &ImGui::GetStyle();
         ImVec4* colors = style->Colors;
 
+		colors[ImGuiCol_TitleBgActive] = ImVec4(1.0f, 179.0f / 255.0f, 179.0f / 255.0f, 1.0f);
 		colors[ImGuiCol_Button] = ImVec4(0.0f, 1.0f, 1.0f, 1.0f);
 		colors[ImGuiCol_ButtonHovered] = ImVec4(0.0f, 1.0f, 1.0f, 0.8f);
 		colors[ImGuiCol_ButtonActive] = ImVec4(0.0f, 1.0f, 1.0f, 0.9f);*/

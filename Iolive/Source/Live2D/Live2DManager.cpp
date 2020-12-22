@@ -105,6 +105,22 @@ void Live2DManager::SetupIndexOfDefaultParameter()
 		else if (strcmp(paramIds[paramIndex], "PARAM_ANGLE_Z") == 0 ||
 				 strcmp(paramIds[paramIndex], "ParamAngleZ") == 0)
 			IndexOfDefaultParameter.ParamAngleZ = paramIndex;
+
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_L_OPEN") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeLOpen") == 0)
+			IndexOfDefaultParameter.ParamEyeLOpen = paramIndex;
+
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_R_OPEN") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeROpen") == 0)
+			IndexOfDefaultParameter.ParamEyeROpen = paramIndex;
+
+		else if (strcmp(paramIds[paramIndex], "PARAM_MOUTH_OPEN_Y") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamMouthOpenY") == 0)
+			IndexOfDefaultParameter.ParamMouthOpenY = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_MOUTH_FORM") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamMouthForm") == 0)
+			IndexOfDefaultParameter.ParamMouthForm = paramIndex;
 	}
 }
 
@@ -124,6 +140,7 @@ void Live2DManager::TryDeleteModel()
 		delete s_Model2D;
 		s_Model2D = nullptr;
 		ReleaseAllParameterBinding();
+		IndexOfDefaultParameter = DefaultParameter{};
 	}
 }
 
@@ -137,8 +154,11 @@ void Live2DManager::OnUpdate(float deltaTime)
 		for (auto [index, ptrValue] : s_ParameterBinding)
 		{
 			if (ptrValue)
+			{
 				s_Model2D->GetModel()->SetParameterValue(index, *ptrValue);
+			}
 		}
+
 		s_Model2D->GetModel()->SaveParameters();
 
 		s_Model2D->OnUpdate(deltaTime);

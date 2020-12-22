@@ -38,6 +38,10 @@ public:
 		int ParamAngleX = -1;
 		int ParamAngleY = -1;
 		int ParamAngleZ = -1;
+		int ParamEyeLOpen = -1;
+		int ParamEyeROpen = -1;
+		int ParamMouthOpenY = -1;
+		int ParamMouthForm = -1;
 	} IndexOfDefaultParameter;
 
 private:
