@@ -55,6 +55,18 @@ namespace Iolive {
 			}
 		}
 
+		switch (IoliveGui::LeftWidget.GetSelectedFPS())
+		{
+			case IoliveGui::LeftWidget.FPS_30:
+				Window::SetMaxFPS(30.f); break;
+			case IoliveGui::LeftWidget.FPS_45:
+				Window::SetMaxFPS(45.f); break;
+			case IoliveGui::LeftWidget.FPS_60:
+				Window::SetMaxFPS(60.f); break;
+			default:
+				Window::SetMaxFPS(60.f);
+		}
+
 		IofaceBridge::DoOptimizeParameters();
 
 		if (Live2DManager::IsModelChanged() && IofaceBridge::IsCameraOpened())

@@ -32,20 +32,18 @@ namespace Iolive {
 		{
 			if (s_Ioface.IsCameraOpened())
 			{
-				// float deltaTime = static_cast<float>(Window::GetDeltaTime());
+				float deltaTime = static_cast<float>(Window::GetDeltaTime());
 
-				Parameters.AngleX = MathUtils::Lerp(Parameters.AngleX, s_Ioface.AngleX, 0.06f);
-				Parameters.AngleY = MathUtils::Lerp(Parameters.AngleY, s_Ioface.AngleY, 0.06f);
-				Parameters.AngleZ = MathUtils::Lerp(Parameters.AngleZ, s_Ioface.AngleZ, 0.06f);
+				Parameters.AngleX = MathUtils::Lerp(Parameters.AngleX, s_Ioface.AngleX, deltaTime * 17.f);
+				Parameters.AngleY = MathUtils::Lerp(Parameters.AngleY, s_Ioface.AngleY, deltaTime * 17.f);
+				Parameters.AngleZ = MathUtils::Lerp(Parameters.AngleZ, s_Ioface.AngleZ, deltaTime * 17.f);
 
 				// mouth open y
-				Parameters.MouthOpenY = s_Ioface.MouthOpenY / 20.f;
-				if (Parameters.MouthOpenY < 0.3f)
+				float tmpMouthOpenY = s_Ioface.MouthOpenY / 40.f;
+				if (tmpMouthOpenY < 0.2f)
 					Parameters.MouthOpenY = 0.0f;
-				else if (Parameters.MouthOpenY > 0.3f && Parameters.MouthOpenY < 0.7f)
-					Parameters.MouthOpenY *= 1.5f;
-				else if (Parameters.MouthOpenY > 0.9f)
-					Parameters.MouthOpenY = 1.0f;
+				else if (tmpMouthOpenY > 0.2f)
+					Parameters.MouthOpenY = tmpMouthOpenY * 2.f;
 
 				// mouth form
 				Parameters.MouthForm = s_Ioface.MouthForm / 90.f;

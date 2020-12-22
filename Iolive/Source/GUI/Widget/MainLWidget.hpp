@@ -52,7 +52,11 @@ public:
 
 				if (ImGui::BeginTabItem("Settings"))
 				{
-					ImGui::Text("fps: %.0f", io.Framerate);
+					const char* fpsStr[FPS_ITEM_COUNT] = { "30", "45", "60" };
+					const char* fpsStrShowed = (m_SelectedFPS >= 0 && m_SelectedFPS < FPS_ITEM_COUNT) ? fpsStr[m_SelectedFPS] : "60";
+					ImGui::SliderInt("Max FPS", &m_SelectedFPS, 0, FPS_ITEM_COUNT - 1, fpsStrShowed);
+					ImGui::Text("Estimated FPS: %.0f", io.Framerate);
+
 					ImGui::EndTabItem();
 				}
 				ImGui::EndTabBar();
@@ -65,6 +69,10 @@ public:
 	ParameterValue& GetParameterGui() { return m_ParamValue; }
 	Checkbox& GetCheckboxFaceCapture() { return m_FaceCapture; }
 	// Checkbox& GetCheckboxShowFrame() { return m_ShowFrame; }
+	unsigned short GetSelectedFPS() { return m_SelectedFPS; }
+
+public:
+	enum FPSEnumValue { FPS_30 = 0, FPS_45, FPS_60, FPS_ITEM_COUNT };
 
 private:
 	// do action
@@ -95,8 +103,8 @@ private:
 	}
 	
 private:
-	// private member
 	ParameterValue m_ParamValue;
 	Checkbox m_FaceCapture;
 	// Checkbox m_ShowFrame;
+	int m_SelectedFPS = FPS_60;
 };
