@@ -60,6 +60,7 @@ PRIVATE
 	Source/Window.hpp
 	Source/IofaceBridge.hpp
 	Source/MathUtils.hpp
+	Source/Logger.hpp
 	Source/Live2D/Live2DManager.hpp
 	Source/Live2D/Model2D.hpp
 	Source/Live2D/Utility.hpp
@@ -67,9 +68,8 @@ PRIVATE
 	Source/Live2D/CubismSamples/LAppAllocator.hpp
 	Source/GUI/IoliveGui.hpp
 	Source/GUI/Utility.hpp
-	Source/GUI/Widget/MainLWidget.hpp
-	Source/GUI/Widget/MainRWidget.hpp
-	Source/GUI/Widget/Component/ParameterValue.hpp
+	Source/GUI/Widget/MainWidget.hpp
+	Source/GUI/Widget/ParameterGui.hpp
 	Source/GUI/Widget/Component/Checkbox.hpp
 
 	# ImGui file

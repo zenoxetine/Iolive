@@ -1,10 +1,10 @@
 #include "Ioface/Ioface.hpp"
-#include <iostream>
+// #include <iostream>
 #include <vector>
 #include <cmath>
 
-#define INGFO std::cout << "[IOFACE][INFO] "
-#define L2Norm(p1, p2) std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
+// #define INGFO std::cout << "[IOFACE][INFO] " // for debuging purpose
+#define L2Norm(p1, p2) std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2))
 
 Ioface::Ioface()
   :	m_Initialized(false)
@@ -34,17 +34,28 @@ Ioface::~Ioface()
 	CloseCamera();
 }
 
-//
-// open camera
-// return true if success
-// return false if failed
-//
 bool Ioface::OpenCamera(int deviceId)
 {
 	if (!m_Initialized)
 		return false;
 
-	return m_Cap.open(deviceId);
+	m_Cap.open(deviceId);
+
+	// test capturing new frame
+	cv::Mat testFrame;
+	bool testSuccess = m_Cap.read(testFrame);
+
+	if (!testSuccess || testFrame.empty())
+	{
+		// can't take new frame from camera.
+		m_Cap.release();
+		return false;
+	}
+	else
+	{
+		return m_Cap.isOpened();
+	}
+
 }
 
 void Ioface::CloseCamera()
@@ -140,6 +151,22 @@ void Ioface::EstimateHeadPose(const INTRAFACE::HeadPose& headPose)
 
 void Ioface::EstimateFeatureDistance(const cv::Mat& landmarks)
 {
+	// scale landmark size based on nose height
+	cv::Point pTopNose = cv::Point(landmarks.at<float>(0, 10), landmarks.at<float>(1, 10));
+	cv::Point pBottomNose = cv::Point(landmarks.at<float>(0, 16), landmarks.at<float>(1, 16));
+	float noseHeight = L2Norm(pTopNose, pBottomNose);
+	this->DistScale = noseHeight / 80.f;
+	if (DistScale > 1.0f)
+	{
+		DistScale = 1.f - (DistScale - 1.f);
+		if (DistScale < 0.5f)
+			DistScale = 0.5f;
+	}
+	else if (DistScale < 1.0f)
+	{
+		DistScale = 1.f + (1.0f - DistScale);
+	}
+
 	// calculate eye aspect ratio
 	auto [_leftEAR, _rightEAR] = GetEyeAspectRatio(landmarks);
 	this->LeftEAR = _leftEAR;
@@ -156,9 +183,11 @@ void Ioface::EstimateFeatureDistance(const cv::Mat& landmarks)
 	cv::Point pMouthRight = cv::Point(landmarks.at<float>(0, 37), landmarks.at<float>(1, 37));
 	this->MouthForm = L2Norm(pMouthLeft, pMouthRight);
 
-
+	cv::Point pBrowLeft = cv::Point(landmarks.at<float>(0, 4), landmarks.at<float>(1, 4));
+	cv::Point pBrowRight = cv::Point(landmarks.at<float>(0, 5), landmarks.at<float>(1, 5));
+	this->EyeBrowLY = L2Norm(pTopNose, pBrowLeft);
+	this->EyeBrowRY = L2Norm(pTopNose, pBrowRight);
 }
-
 
 std::tuple<float, float> Ioface::GetEyeAspectRatio(const cv::Mat& landmarks)
 {
@@ -210,7 +239,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		1.2,
 		2,
 		0,
-		cv::Size(150, 150) // the bigger the lighter, but can't see smoll face
+		cv::Size(200, 200) // the bigger the lighter, but can't see smoll face
 	);
 
 	if (facesRect.size() > 0)

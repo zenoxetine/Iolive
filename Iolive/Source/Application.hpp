@@ -29,16 +29,16 @@ namespace Iolive {
 		void OnUpdate();
 		void OnRender();
 
-		//
-		// do capturing new frame until camera got closed
-		//
+		static void OnFrameResizedCallback(int width, int height);
+		static void OnScrollCallback(double xoffset, double yoffset);
+
+		/* 
+		* TODO: Capturing new frame until flags_StopCapture is true
+		*/
 		void FaceCaptureLoop();
 		
 		bool OpenCamera();
 		void CloseCamera();
-
-		void BindDefaultParametersWithFace();
-		void BindDefaultParametersWithGui();
 
 	private:
 		std::thread faceCaptureThread; // face capturing thread

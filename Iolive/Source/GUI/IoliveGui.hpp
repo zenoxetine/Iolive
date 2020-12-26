@@ -1,8 +1,5 @@
 #pragma once
 
-#include "Widget/MainLWidget.hpp"
-#include "Widget/MainRWidget.hpp"
-
 namespace Iolive {
 	class IoliveGui
 	{
@@ -12,12 +9,7 @@ namespace Iolive {
 		static void OnDraw();
 
 	private:
-		static void SetIoliveThemeColors();
-		static void InitWidget();
+		static void SetupGuiTheme();
 		static void DrawAllWidget();
-
-	public:
-		inline static MainLeftWidget LeftWidget;
-		inline static MainRightWidget RightWidget;
 	};
 } // namespace Iolive

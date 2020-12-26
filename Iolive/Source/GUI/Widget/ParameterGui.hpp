@@ -5,14 +5,10 @@
 #include <vector>
 #include <array>
 
-class ParameterValue
+class ParameterGui
 {
 public:
-	ParameterValue()
-	{
-	}
-
-	void DoDraw()
+	static void DoDraw()
 	{
 		if (GetParameterCount() < 1) return;
 
@@ -31,7 +27,7 @@ public:
 		ImGui::PopStyleVar();
 	}
 
-	void SetParameterMap(const std::map<const char*, float>& paramMap, const std::vector<std::array<float, 2>>& paramMinMax)
+	static void SetParameterMap(const std::map<const char*, float>& paramMap, const std::vector<std::array<float, 2>>& paramMinMax)
 	{
 		ClearAll();
 
@@ -46,26 +42,26 @@ public:
 		m_ParamMinMax = paramMinMax;
 	}
 
-	float* GetPtrValueByIndex(int index)
+	static float* GetPtrValueByIndex(int index)
 	{
 		return m_ParametersPtrValue[index];
 	}
 
-	void ClearAll()
+	static void ClearAll()
 	{
 		m_ParametersPtrValue.clear();
 		m_Parameters.clear();
 		m_ParamMinMax.clear();
 	}
 
-	size_t GetParameterCount() const
+	static size_t GetParameterCount()
 	{
 		return m_Parameters.size();
 	}
 
 private:
-	std::map<const char*, float> m_Parameters;
-	std::vector<float*> m_ParametersPtrValue; // this is pointed to m_Parameters second value
+	inline static std::map<const char*, float> m_Parameters;
+	inline static std::vector<float*> m_ParametersPtrValue; // this is pointed to m_Parameters second value
 
-	std::vector<std::array<float, 2>> m_ParamMinMax;
+	inline static std::vector<std::array<float, 2>> m_ParamMinMax;
 };

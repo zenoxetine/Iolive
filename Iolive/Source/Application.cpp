@@ -1,12 +1,19 @@
 #include "Application.hpp"
 #include <GL/glew.h>
+
+// many of these, are a static class function
+#include "GUI/IoliveGui.hpp"
+#include "GUI/Widget/MainWidget.hpp"
+#include "GUI/Widget/ParameterGui.hpp"
 #include "Window.hpp"
 #include "IofaceBridge.hpp"
-#include "GUI/IoliveGui.hpp"
 #include "Live2D/Live2DManager.hpp"
 
-#define WINDOW_WIDTH 555  // HAHAHA
-#define WINDOW_HEIGHT 666 // HIIII
+#include "Logger.hpp"
+#include "MathUtils.hpp"
+
+#define WINDOW_WIDTH 540
+#define WINDOW_HEIGHT 670
 #define WINDOW_TITLE "Iolive"
 
 namespace Iolive {
@@ -29,6 +36,8 @@ namespace Iolive {
 	void Application::Run()
 	{
 		Window::SetWindowVisible(true);
+		Window::SetFrameResizedCallback(&Application::OnFrameResizedCallback);
+		Window::SetScrollCallback(&Application::OnScrollCallback);
 
 		// Application loop
 		while (!Window::PollEvents())
@@ -38,15 +47,35 @@ namespace Iolive {
 		}
 	}
 
+	void Application::OnFrameResizedCallback(int width, int height)
+	{
+		Application::Get()->OnRender();
+	}
+
+	void Application::OnScrollCallback(double xoffset, double yoffset)
+	{
+		if (Live2DManager::IsModelInitialized())
+		{
+			// float scale = MathUtils::Lerp(yoffset * 0.02f, yoffset, 0.05f);
+			float scale = yoffset / 7;
+
+			float nextModelScale = Live2DManager::GetModelScale() + scale;
+			if (nextModelScale >= 0.0f)
+				Live2DManager::SetModelScale(nextModelScale);
+			else
+				Live2DManager::SetModelScale(0.0f);
+		}
+	}
+
 	void Application::OnUpdate()
 	{
-		if (IoliveGui::LeftWidget.GetCheckboxFaceCapture().IsChanged())
+		if (MainWidget::GetCheckbox_FaceCapture().IsChanged())
 		{
-			if (IoliveGui::LeftWidget.GetCheckboxFaceCapture().IsChecked())
+			if (MainWidget::GetCheckbox_FaceCapture().IsChecked())
 			{
 				if (!OpenCamera())
 				{
-					IoliveGui::LeftWidget.GetCheckboxFaceCapture().SetChecked(false);
+					MainWidget::GetCheckbox_FaceCapture().SetChecked(false);
 				}
 			}
 			else
@@ -55,25 +84,16 @@ namespace Iolive {
 			}
 		}
 
-		switch (IoliveGui::LeftWidget.GetSelectedFPS())
-		{
-			case IoliveGui::LeftWidget.FPS_30:
-				Window::SetMaxFPS(30.f); break;
-			case IoliveGui::LeftWidget.FPS_45:
-				Window::SetMaxFPS(45.f); break;
-			case IoliveGui::LeftWidget.FPS_60:
-				Window::SetMaxFPS(60.f); break;
-			default:
-				Window::SetMaxFPS(60.f);
-		}
-
 		IofaceBridge::DoOptimizeParameters();
 
-		if (Live2DManager::IsModelChanged() && IofaceBridge::IsCameraOpened())
+		if (Live2DManager::IsModelChanged())
 		{
-			// there's a new model and camera opened
-			// but model parameter wasn't binded with face capture. Bind it now
-			BindDefaultParametersWithFace();
+			if (IofaceBridge::IsCameraOpened())
+			{
+				// there's a new model and camera opened
+				// but model parameter wasn't binded with face capture. Bind it now
+				IofaceBridge::BindDefaultParametersWithFace();
+			}
 		}
 
 		Live2DManager::OnUpdate(Window::GetDeltaTime());
@@ -99,7 +119,7 @@ namespace Iolive {
 	{
 		while (!flags_StopCapture)
 		{
-			IofaceBridge::UpdateIoface(); // capturing new frame from camera
+			IofaceBridge::UpdateIoface(); 
 		}
 	}
 
@@ -107,15 +127,14 @@ namespace Iolive {
 	{
 		if (IofaceBridge::OpenCamera(0))
 		{
-			// create separate thread for face capture loop
+			// make separate thread for face capture loop
 			flags_StopCapture = false;
 			faceCaptureThread = std::thread(&Application::FaceCaptureLoop, this);
 
-			// if model was opened,
-			// bind those default parameter with pointer of optimized parameter from IofaceBridge
 			if (Live2DManager::IsModelInitialized())
 			{
-				BindDefaultParametersWithFace();
+				// bind model parameters with OptimizedParameter from IofaceBridge
+				IofaceBridge::BindDefaultParametersWithFace();
 			}
 		}
 
@@ -128,80 +147,13 @@ namespace Iolive {
 		flags_StopCapture = true;
 		if (faceCaptureThread.joinable())
 			faceCaptureThread.join();
-
-		// close camera
+		
 		IofaceBridge::CloseCamera();
 
 		if (Live2DManager::IsModelInitialized())
 		{
-			// bind parameters with the gui
-			BindDefaultParametersWithGui();
-		}
-	}
-
-	void Application::BindDefaultParametersWithFace()
-	{
-		const Live2DManager::DefaultParameter& paramIndex = Live2DManager::IndexOfDefaultParameter;
-		if (paramIndex.ParamAngleX > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamAngleX, &(IofaceBridge::Parameters.AngleX));
-		if (paramIndex.ParamAngleY > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamAngleY, &(IofaceBridge::Parameters.AngleY));
-		if (paramIndex.ParamAngleZ > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamAngleZ, &(IofaceBridge::Parameters.AngleZ));
-		if (paramIndex.ParamEyeLOpen > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamEyeLOpen, &(IofaceBridge::Parameters.EyeLOpen));
-		if (paramIndex.ParamEyeROpen > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamEyeROpen, &(IofaceBridge::Parameters.EyeROpen));
-		if (paramIndex.ParamMouthOpenY > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamMouthOpenY, &(IofaceBridge::Parameters.MouthOpenY));
-		if (paramIndex.ParamMouthForm > -1)
-			Live2DManager::SetParameterBinding(paramIndex.ParamMouthForm, &(IofaceBridge::Parameters.MouthForm));
-	}
-
-	void Application::BindDefaultParametersWithGui()
-	{
-		const Live2DManager::DefaultParameter& paramIndex = Live2DManager::IndexOfDefaultParameter;
-
-		if (paramIndex.ParamAngleX > -1)
-		{
-			float* ptrGuiParamAngleX = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamAngleX);
-			Live2DManager::SetParameterBinding(paramIndex.ParamAngleX, ptrGuiParamAngleX);
-		}
-
-		if (paramIndex.ParamAngleY > -1)
-		{
-			float* ptrGuiParamAngleY = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamAngleY);
-			Live2DManager::SetParameterBinding(paramIndex.ParamAngleY, ptrGuiParamAngleY);
-		}
-
-		if (paramIndex.ParamAngleZ > -1)
-		{
-			float* ptrGuiParamAngleZ = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamAngleZ);
-			Live2DManager::SetParameterBinding(paramIndex.ParamAngleZ, ptrGuiParamAngleZ);
-		}
-		
-		if (paramIndex.ParamEyeLOpen > -1)
-		{
-			float* ptrGuiParamEyeLOpen = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamEyeLOpen);
-			Live2DManager::SetParameterBinding(paramIndex.ParamEyeLOpen, ptrGuiParamEyeLOpen);
-		}
-		
-		if (paramIndex.ParamEyeROpen > -1)
-		{
-			float* ptrGuiParamEyeROpen = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamEyeROpen);
-			Live2DManager::SetParameterBinding(paramIndex.ParamEyeROpen, ptrGuiParamEyeROpen);
-		}
-		
-		if (paramIndex.ParamMouthOpenY > -1)
-		{
-			float* ptrGuiParamMouthOpenY = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamMouthOpenY);
-			Live2DManager::SetParameterBinding(paramIndex.ParamMouthOpenY, ptrGuiParamMouthOpenY);
-		}
-		
-		if (paramIndex.ParamMouthForm > -1)
-		{
-			float* ptrGuiParamMouthForm = IoliveGui::LeftWidget.GetParameterGui().GetPtrValueByIndex(paramIndex.ParamMouthForm);
-			Live2DManager::SetParameterBinding(paramIndex.ParamMouthForm, ptrGuiParamMouthForm);
+			// bind model parameters with the gui
+			IofaceBridge::BindDefaultParametersWithGui();
 		}
 	}
 }

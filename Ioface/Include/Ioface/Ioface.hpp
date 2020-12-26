@@ -18,9 +18,18 @@ public:
 	Ioface();
 	~Ioface();
 
+	/*
+	* Open camera
+	* return true when success
+	* return false when failed
+	*/
 	bool OpenCamera(int deviceId = 0);
-	void CloseCamera();
 	bool IsCameraOpened() const { return m_Cap.isOpened(); }
+
+	void CloseCamera();
+
+	bool IsFrameEmpty() const { return m_Frame.empty(); }
+	bool IsLandmarksEmpty() const { return m_Landmarks.empty(); }
 
 	void UpdateAll();
 
@@ -40,6 +49,7 @@ private:
 
 public:
 	// parameter properties
+	float DistScale = 1.f;
 	float AngleX = 0.0f;
 	float AngleY = 0.0f;
 	float AngleZ = 0.0f;
@@ -48,6 +58,8 @@ public:
 	float EAR = 0.2f; // average of left & right EAR
 	float MouthOpenY = 0.0f;
 	float MouthForm = 1.0f;
+	float EyeBrowLY = 0.0f;
+	float EyeBrowRY = 0.0f;
 
 private:
 	bool m_Initialized;

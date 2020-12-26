@@ -65,15 +65,15 @@ public:
 		_model->Update();
 	}
 
-	void OnDraw(int width, int height)
+	void OnDraw(int width, int height, float scale)
 	{
 		if (!_initialized || _model == NULL) return;
 		if (width < 1 || height < 1) return;
 
 		CubismMatrix44* projectionMatrix = GetProjectionMatrix();
 		projectionMatrix->Scale(
-			(static_cast<float>(height) / static_cast<float>(width)),
-			1
+			(static_cast<float>(height) / static_cast<float>(width)) * scale,
+			scale
 		);
 
 		projectionMatrix->MultiplyByMatrix(_modelMatrix);

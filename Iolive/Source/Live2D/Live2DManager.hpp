@@ -18,6 +18,10 @@ public:
 	static bool IsModelChanged() { return s_IsModelChanged; }
 	static bool IsModelInitialized();
 
+	static void AddModelScale(float value) { s_ModelScale += value; }
+	static void SetModelScale(float value) { s_ModelScale = value; }
+	static float GetModelScale() { return s_ModelScale; }
+
 	static void OnUpdate(float deltaTime);
 	static void OnDraw(int width, int height);
 
@@ -34,7 +38,10 @@ private:
 	static void TryDeleteModel();
 
 public:
-	inline static struct DefaultParameter {
+	/* 
+	* unindexed parameter will be initialized with -1
+	*/
+	struct ParameterIndex{
 		int ParamAngleX = -1;
 		int ParamAngleY = -1;
 		int ParamAngleZ = -1;
@@ -42,19 +49,41 @@ public:
 		int ParamEyeROpen = -1;
 		int ParamMouthOpenY = -1;
 		int ParamMouthForm = -1;
-	} IndexOfDefaultParameter;
+		int ParamBrowLY = -1;
+		int ParamBrowRY = -1;
+	};
+	
+	/*
+	* Default parameter value
+	*/
+	struct ParameterValue{
+		float ParamAngleX = 0.0f;
+		float ParamAngleY = 0.0f;
+		float ParamAngleZ = 0.0f;
+		float ParamEyeLOpen = 1.0f;
+		float ParamEyeROpen = 1.0f;
+		float ParamMouthOpenY = 0.0f;
+		float ParamMouthForm = 1.0f;
+		float ParamBrowLY = 0.0f;
+		float ParamBrowRY = 0.0f;
+	};
+
+	inline static struct ParameterIndex IndexOfDefaultParameter;
 
 private:
 	// Cubism memory allocator
 	inline static LAppAllocator s_CubismAllocator;
+	inline static CubismFramework::Option s_CubismOption;
 
 	// for now only use 1 model
 	inline static Model2D* s_Model2D;
+
+	inline static float s_ModelScale = 1.0f;
 
 	// variable binding for update model parameter
 	// <ParameterIndex, PointerToFloat>
 	inline static std::map<int, float*> s_ParameterBinding;
 
-	// flags
+	// signal
 	inline static bool s_IsModelChanged;
 };

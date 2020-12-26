@@ -8,7 +8,9 @@ bool Live2DManager::Init()
 	if (!CubismFramework::IsInitialized())
 	{
 		// Initialize CubismFramework
-		CubismFramework::StartUp(&s_CubismAllocator);
+		s_CubismOption.LoggingLevel = CubismFramework::Option::LogLevel_Warning;
+		s_CubismOption.LogFunction = [](const char* message) { std::printf("%s", message); };
+		CubismFramework::StartUp(&s_CubismAllocator, &s_CubismOption);
 		CubismFramework::Initialize();
 	}
 
@@ -18,7 +20,7 @@ bool Live2DManager::Init()
 void Live2DManager::Release()
 {
 	TryDeleteModel();
-	CubismFramework::Dispose(); // release CubismFramework
+	CubismFramework::Dispose();
 }
 
 bool Live2DManager::SetModel(const wchar_t* modelJson)
@@ -50,7 +52,7 @@ bool Live2DManager::SetModel(const wchar_t* modelJson)
 	if (s_Model2D->IsInitialized())
 	{
 		SetupIndexOfDefaultParameter();
-		s_IsModelChanged = true; // give a signal/flags
+		s_IsModelChanged = true; // signal
 		return true;
 	}
 	else
@@ -72,7 +74,7 @@ bool Live2DManager::CheckModelSetting(ICubismModelSetting* modelSetting)
 		return false;
 	}
 
-	// i can't load model that contains a unicode in the filename
+	// can't load model that contains a unicode in the filename
 	for (int i = 0; i < strlen(mocFilename); i++)
 	{
 		if (mocFilename[i] < 0)
@@ -121,6 +123,14 @@ void Live2DManager::SetupIndexOfDefaultParameter()
 		else if (strcmp(paramIds[paramIndex], "PARAM_MOUTH_FORM") == 0 ||
 			strcmp(paramIds[paramIndex], "ParamMouthForm") == 0)
 			IndexOfDefaultParameter.ParamMouthForm = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_L_Y") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamBrowLY") == 0)
+			IndexOfDefaultParameter.ParamBrowLY = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_R_Y") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamBrowRY") == 0)
+			IndexOfDefaultParameter.ParamBrowRY = paramIndex;
 	}
 }
 
@@ -140,7 +150,7 @@ void Live2DManager::TryDeleteModel()
 		delete s_Model2D;
 		s_Model2D = nullptr;
 		ReleaseAllParameterBinding();
-		IndexOfDefaultParameter = DefaultParameter{};
+		IndexOfDefaultParameter = {};
 	}
 }
 
@@ -169,7 +179,7 @@ void Live2DManager::OnDraw(int width, int height)
 {
 	if (IsModelInitialized())
 	{
-		s_Model2D->OnDraw(width, height);
+		s_Model2D->OnDraw(width, height, s_ModelScale);
 	}
 }
 

@@ -1,4 +1,5 @@
 #include "Window.hpp"
+#include "Logger.hpp"
 #include <stdexcept>
 #include <thread>
 #include <chrono>
@@ -6,6 +7,8 @@
 namespace Iolive {
 	void Window::Create(const char* title, int width, int height)
 	{
+		auto _stackElapsed = StackLogger("Window Creation");
+
 		glfwInit();
 
 		s_Window = glfwCreateWindow(width, height, title, NULL, NULL);
@@ -20,9 +23,22 @@ namespace Iolive {
 			throw std::runtime_error("Can't initialize opengl loader");
 		}
 
-		// glfwSetFramebufferSizeCallback(m_Window, FramebufferSizeCallback);
+		glfwSetFramebufferSizeCallback(s_Window, PreFrameResizeCallback);
+		glfwSetScrollCallback(s_Window, PreScrollCallback);
 	}
-	
+
+	void Window::PreFrameResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		if (s_DoFrameResizedCallback != nullptr)
+			s_DoFrameResizedCallback(width, height);
+	}
+
+	void Window::PreScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+	{
+		if (s_DoScrollCallback != nullptr)
+			s_DoScrollCallback(xoffset, yoffset);
+	}
+
 	void Window::Destroy()
 	{
 		glfwDestroyWindow(s_Window);
