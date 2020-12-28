@@ -20,16 +20,22 @@ namespace Iolive {
 		static void SetWindowVisible(bool visible);
 		static void SetMaxFPS(float maxFPS) { s_MaxFPS = maxFPS; }
 		
-		static void SetFrameResizedCallback(void(*callback)(int, int)) { s_DoFrameResizedCallback = callback; }
-		static void SetScrollCallback(void(*callback)(double, double)) { s_DoScrollCallback = callback; }
+		/*
+		* Set callback function
+		*/
+		static void SetFrameResizedCallback(void(*callback)(int, int)) { s_OnFrameResizedCallback = callback; }
+		static void SetScrollCallback(void(*callback)(double, double)) { s_OnScrollCallback = callback; }
+		static void SetCursorPosCallback(void(*callback)(bool, double, double)) { s_OnCursorPosCallback = callback; }
 
 		static GLFWwindow* GetWindow() { return s_Window; }
 		static void GetWindowSize(int* outWidth, int* outHeight) { glfwGetWindowSize(s_Window, outWidth, outHeight); }
 		static double GetDeltaTime() { return s_DeltaTime; }
 
 	private:
-		static void PreFrameResizeCallback(GLFWwindow* window, int width, int height);
-		static void PreScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+		// callback from glfw
+		static void FrameResizedCallback(GLFWwindow* window, int width, int height);
+		static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+		static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 
 	private:
 		inline static GLFWwindow* s_Window;
@@ -41,8 +47,9 @@ namespace Iolive {
 		inline static double s_DeltaTime = 0.02; // in seconds
 
 		// callback
-		inline static void(*s_DoScrollCallback)(double xoffset, double yoffset) = nullptr;
-		inline static void(*s_DoFrameResizedCallback)(int width, int height) = nullptr;
+		inline static void(*s_OnFrameResizedCallback)(int width, int height) = nullptr;
+		inline static void(*s_OnScrollCallback)(double xoffset, double yoffset) = nullptr;
+		inline static void(*s_OnCursorPosCallback)(bool pressed, double xpos, double ypos) = nullptr;
 	};
 
 } // namespace Iolive

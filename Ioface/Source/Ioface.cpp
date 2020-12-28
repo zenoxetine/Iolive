@@ -81,7 +81,6 @@ void Ioface::UpdateParameters()
 {
 	if (!m_Cap.isOpened() || !m_Initialized) return;
 
-	// UpdateFrame();
 	if (m_Frame.empty()) return;
 
 	float score = 0.0f;
@@ -183,6 +182,7 @@ void Ioface::EstimateFeatureDistance(const cv::Mat& landmarks)
 	cv::Point pMouthRight = cv::Point(landmarks.at<float>(0, 37), landmarks.at<float>(1, 37));
 	this->MouthForm = L2Norm(pMouthLeft, pMouthRight);
 
+	// eye brow (distance between brow & top nose)
 	cv::Point pBrowLeft = cv::Point(landmarks.at<float>(0, 4), landmarks.at<float>(1, 4));
 	cv::Point pBrowRight = cv::Point(landmarks.at<float>(0, 5), landmarks.at<float>(1, 5));
 	this->EyeBrowLY = L2Norm(pTopNose, pBrowLeft);
@@ -239,7 +239,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		1.2,
 		2,
 		0,
-		cv::Size(200, 200) // the bigger the lighter, but can't see smoll face
+		cv::Size(250, 250) // the bigger the lighter, but can't see smoll face
 	);
 
 	if (facesRect.size() > 0)

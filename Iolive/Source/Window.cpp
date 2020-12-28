@@ -23,20 +23,33 @@ namespace Iolive {
 			throw std::runtime_error("Can't initialize opengl loader");
 		}
 
-		glfwSetFramebufferSizeCallback(s_Window, PreFrameResizeCallback);
-		glfwSetScrollCallback(s_Window, PreScrollCallback);
+		glfwSetFramebufferSizeCallback(s_Window, FrameResizedCallback);
+		glfwSetScrollCallback(s_Window, ScrollCallback);
+		glfwSetCursorPosCallback(s_Window, CursorPosCallback);
 	}
 
-	void Window::PreFrameResizeCallback(GLFWwindow* window, int width, int height)
+	void Window::FrameResizedCallback(GLFWwindow* window, int width, int height)
 	{
-		if (s_DoFrameResizedCallback != nullptr)
-			s_DoFrameResizedCallback(width, height);
+		if (s_OnFrameResizedCallback != nullptr)
+			s_OnFrameResizedCallback(width, height);
 	}
 
-	void Window::PreScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+	void Window::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 	{
-		if (s_DoScrollCallback != nullptr)
-			s_DoScrollCallback(xoffset, yoffset);
+		if (s_OnScrollCallback != nullptr)
+			s_OnScrollCallback(xoffset, yoffset);
+	}
+
+	void Window::CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+	{
+		if (s_OnCursorPosCallback == nullptr) return;
+
+		int lMouseButtonState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+	
+		if (lMouseButtonState == GLFW_PRESS)
+			s_OnCursorPosCallback(true, xpos, ypos); // pressed: true
+		else if (lMouseButtonState == GLFW_RELEASE)
+			s_OnCursorPosCallback(false, xpos, ypos); // pressed: false
 	}
 
 	void Window::Destroy()

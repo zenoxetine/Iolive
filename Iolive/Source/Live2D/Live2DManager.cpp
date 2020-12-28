@@ -177,9 +177,20 @@ void Live2DManager::OnUpdate(float deltaTime)
 
 void Live2DManager::OnDraw(int width, int height)
 {
+	if (width < 1 || height < 1) return;
 	if (IsModelInitialized())
 	{
-		s_Model2D->OnDraw(width, height, s_ModelScale);
+		// scale & translate model matrix
+		CubismMatrix44* projectionMatrix = s_Model2D->GetProjectionMatrix();
+		projectionMatrix->Scale(
+			(static_cast<float>(height) / static_cast<float>(width)) * s_ModelScale,
+			s_ModelScale
+		);
+		projectionMatrix->TranslateX(s_ModelTransX);
+		projectionMatrix->TranslateY(s_ModelTransY);
+
+		// draw
+		s_Model2D->OnDraw();
 	}
 }
 

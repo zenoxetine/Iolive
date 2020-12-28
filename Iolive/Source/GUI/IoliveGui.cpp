@@ -25,6 +25,7 @@ namespace Iolive {
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
+		io.ConfigViewportsNoAutoMerge = true; // fly... me to the moon~
 		io.IniFilename = NULL; // don't create file .ini
 		
 		io.Fonts->AddFontFromFileTTF("Assets/fonts/roboto-android/Roboto-Bold.ttf", 18.0f);
@@ -86,10 +87,10 @@ namespace Iolive {
 
 		struct ImVec3 { float x, y, z; ImVec3(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) { x = _x; y = _y; z = _z; } };
 
-		static ImVec3 color_for_head = ImVec3(255.f / 255.f, 182.f / 255.f, 192.f / 255.f);
-		static ImVec3 color_for_area = ImVec3(240.f / 255.f, 229.f / 255.f, 225.f / 255.f);
-		static ImVec3 color_for_body = ImVec3(252.f / 255.f, 252.f / 255.f, 252.f / 255.f);
-		static ImVec3 color_for_pops = ImVec3(171.f / 255.f, 227.f / 255.f, 66.f / 255.f);
+		static ImVec3 color_for_head = ImVec3(232.f / 255.f, 164.f / 255.f, 160.f / 255.f);
+		static ImVec3 color_for_area = ImVec3(238.f / 255.f, 220.f / 255.f, 215.f / 255.f);
+		static ImVec3 color_for_body = ImVec3(255.f / 255.f, 255.f / 255.f, 255.f / 255.f);
+		static ImVec3 color_for_pops = ImVec3(187.f / 255.f, 215.f / 255.f, 109.f / 255.f);
 
 		style.Colors[ImGuiCol_WindowBg] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.95f);
 		style.Colors[ImGuiCol_Border] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.00f);

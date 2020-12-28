@@ -29,9 +29,6 @@ namespace Iolive {
 		void OnUpdate();
 		void OnRender();
 
-		static void OnFrameResizedCallback(int width, int height);
-		static void OnScrollCallback(double xoffset, double yoffset);
-
 		/* 
 		* TODO: Capturing new frame until flags_StopCapture is true
 		*/
@@ -39,6 +36,13 @@ namespace Iolive {
 		
 		bool OpenCamera();
 		void CloseCamera();
+
+		/*
+		* Window callback
+		*/
+		static void OnFrameResizedCallback(int width, int height);
+		static void OnScrollCallback(double xoffset, double yoffset);
+		static void OnCursorPosCallback(bool pressed, double xpos, double ypos);
 
 	private:
 		std::thread faceCaptureThread; // face capturing thread

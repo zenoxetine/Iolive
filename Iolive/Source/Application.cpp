@@ -1,7 +1,7 @@
 #include "Application.hpp"
 #include <GL/glew.h>
 
-// many of these, are a static class function
+// many of these, are a static class method
 #include "GUI/IoliveGui.hpp"
 #include "GUI/Widget/MainWidget.hpp"
 #include "GUI/Widget/ParameterGui.hpp"
@@ -38,32 +38,13 @@ namespace Iolive {
 		Window::SetWindowVisible(true);
 		Window::SetFrameResizedCallback(&Application::OnFrameResizedCallback);
 		Window::SetScrollCallback(&Application::OnScrollCallback);
+		Window::SetCursorPosCallback(&Application::OnCursorPosCallback);
 
 		// Application loop
 		while (!Window::PollEvents())
 		{
 			OnUpdate();
 			OnRender();
-		}
-	}
-
-	void Application::OnFrameResizedCallback(int width, int height)
-	{
-		Application::Get()->OnRender();
-	}
-
-	void Application::OnScrollCallback(double xoffset, double yoffset)
-	{
-		if (Live2DManager::IsModelInitialized())
-		{
-			// float scale = MathUtils::Lerp(yoffset * 0.02f, yoffset, 0.05f);
-			float scale = yoffset / 7;
-
-			float nextModelScale = Live2DManager::GetModelScale() + scale;
-			if (nextModelScale >= 0.0f)
-				Live2DManager::SetModelScale(nextModelScale);
-			else
-				Live2DManager::SetModelScale(0.0f);
 		}
 	}
 
@@ -156,4 +137,74 @@ namespace Iolive {
 			IofaceBridge::BindDefaultParametersWithGui();
 		}
 	}
-}
+
+	void Application::OnFrameResizedCallback(int width, int height)
+	{
+		Application::Get()->OnRender();
+	}
+
+	void Application::OnScrollCallback(double xoffset, double yoffset)
+	{
+		if (Live2DManager::IsModelInitialized())
+		{
+			float scale = yoffset / 13;
+
+			float nextModelScale = Live2DManager::GetModelScale() + scale;
+			if (nextModelScale >= 0.01f)
+				Live2DManager::SetModelScale(nextModelScale);
+			else
+				Live2DManager::SetModelScale(0.01f);
+		}
+	}
+
+	void Application::OnCursorPosCallback(bool pressed, double xpos, double ypos)
+	{
+		static bool isHasReleased = true;
+		static double lastX = -1.0;
+		static double lastY = -1.0;
+
+		if (!pressed)
+		{
+			isHasReleased = true; // mouse released || not clicked
+		}
+
+		if (lastX >= 0.0 && lastY >= 0.0)
+		{
+			if (!isHasReleased && pressed && xpos > 0.0 && ypos > 0.0) // allow dragging on window screen only
+			{
+				if (Live2DManager::IsModelInitialized())
+				{
+					double xDist = xpos - lastX;
+					double yDist = ypos - lastY;
+					lastX = xpos;
+					lastY = ypos;
+
+					int wWidth, wHeight;
+					Window::GetWindowSize(&wWidth, &wHeight);
+
+					xDist = MathUtils::Normalize(xDist, 0.f, wWidth / 2);
+					yDist = MathUtils::Normalize(yDist, 0.f, wHeight / 2);
+
+					Live2DManager::AddModelTranslateX(xDist);
+					Live2DManager::AddModelTranslateY(-yDist);
+				}
+			}
+		}
+		else
+		{
+			if (pressed) // first time mouse clicked
+			{
+				lastX = xpos;
+				lastY = ypos;
+			}
+		}
+
+		if (pressed)
+		{
+			// start draging mouse in the next frame (if mouse isn't released)
+			isHasReleased = false;
+			lastX = xpos;
+			lastY = ypos;
+		}
+	}
+} // namespace Iolive

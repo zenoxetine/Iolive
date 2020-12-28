@@ -22,7 +22,7 @@ namespace Iolive {
 				float deltaTime = static_cast<float>(Window::GetDeltaTime());
 				#define SMOOTH_SLOW(start, end) MathUtils::Lerp(start, end, deltaTime * 5.f)
 				#define SMOOTH_MEDIUM(start, end) MathUtils::Lerp(start, end, deltaTime * 10.f)
-				#define SMOOTH_FAST(start, end) MathUtils::Lerp(start, end, deltaTime * 25.f)
+				#define SMOOTH_FAST(start, end) MathUtils::Lerp(start, end, deltaTime * 20.f)
 
 				// ParamAngle
 				OptimizedParameter.ParamAngleX = SMOOTH_SLOW(OptimizedParameter.ParamAngleX, s_Ioface.DistScale * s_Ioface.AngleX);
@@ -30,13 +30,12 @@ namespace Iolive {
 				OptimizedParameter.ParamAngleZ = SMOOTH_SLOW(OptimizedParameter.ParamAngleZ, s_Ioface.DistScale * s_Ioface.AngleZ);
 
 				// mouth open y
-				float absAngleY = MathUtils::Abs(OptimizedParameter.ParamAngleY);
-				float normalizedMouthOpenY = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthOpenY, 3.0f, 16.f);
+				float normalizedMouthOpenY = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthOpenY, 4.0f, 15.0f);
 				OptimizedParameter.ParamMouthOpenY = SMOOTH_FAST(OptimizedParameter.ParamMouthOpenY, normalizedMouthOpenY);
 
 				// mouth form
-				float normalizedMouthForm = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthForm, 73.0f, 90.0f);
-				OptimizedParameter.ParamMouthForm = SMOOTH_MEDIUM(OptimizedParameter.ParamMouthForm, normalizedMouthForm);
+				float normalizedMouthForm = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthForm, 70.0f, 88.0f);
+				OptimizedParameter.ParamMouthForm = SMOOTH_FAST(OptimizedParameter.ParamMouthForm, normalizedMouthForm);
 
 				// eye brow
 				float optBrowLY = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.EyeBrowLY, 45.0f, 55.0f);
@@ -46,8 +45,8 @@ namespace Iolive {
 				OptimizedParameter.ParamBrowRY = OptimizedParameter.ParamBrowLY; // same
 
 				// eye
-				float optEAR = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.EAR, 0.1f, 0.26f);
-				OptimizedParameter.ParamEyeLOpen = SMOOTH_FAST(OptimizedParameter.ParamEyeLOpen, optEAR);
+				float optEAR = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.EAR, 0.1f, 0.23f);
+				OptimizedParameter.ParamEyeLOpen = SMOOTH_MEDIUM(OptimizedParameter.ParamEyeLOpen, optEAR);
 				OptimizedParameter.ParamEyeROpen = OptimizedParameter.ParamEyeLOpen;
 			}
 		}

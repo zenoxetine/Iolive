@@ -65,20 +65,13 @@ public:
 		_model->Update();
 	}
 
-	void OnDraw(int width, int height, float scale)
+	void OnDraw()
 	{
 		if (!_initialized || _model == NULL) return;
-		if (width < 1 || height < 1) return;
 
-		CubismMatrix44* projectionMatrix = GetProjectionMatrix();
-		projectionMatrix->Scale(
-			(static_cast<float>(height) / static_cast<float>(width)) * scale,
-			scale
-		);
+		GetProjectionMatrix()->MultiplyByMatrix(_modelMatrix);
 
-		projectionMatrix->MultiplyByMatrix(_modelMatrix);
-
-		GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->SetMvpMatrix(projectionMatrix);
+		GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->SetMvpMatrix(GetProjectionMatrix());
 		GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->DrawModel();
 	}
 

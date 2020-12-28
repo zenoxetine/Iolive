@@ -22,6 +22,9 @@ public:
 	static void SetModelScale(float value) { s_ModelScale = value; }
 	static float GetModelScale() { return s_ModelScale; }
 
+	static void AddModelTranslateX(float value) { s_ModelTransX += value; }
+	static void AddModelTranslateY(float value) { s_ModelTransY += value; }
+
 	static void OnUpdate(float deltaTime);
 	static void OnDraw(int width, int height);
 
@@ -68,17 +71,20 @@ public:
 		float ParamBrowRY = 0.0f;
 	};
 
-	inline static struct ParameterIndex IndexOfDefaultParameter;
+	inline static struct ParameterIndex IndexOfDefaultParameter; // connected with s_Model
 
 private:
 	// Cubism memory allocator
 	inline static LAppAllocator s_CubismAllocator;
 	inline static CubismFramework::Option s_CubismOption;
 
-	// for now only use 1 model
+	// only use 1 model
 	inline static Model2D* s_Model2D;
 
+	// value for scaling / translating model matrix
 	inline static float s_ModelScale = 1.0f;
+	inline static float s_ModelTransX = 0.0f;
+	inline static float s_ModelTransY = 0.0f;
 
 	// variable binding for update model parameter
 	// <ParameterIndex, PointerToFloat>
