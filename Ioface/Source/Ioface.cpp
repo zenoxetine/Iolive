@@ -158,12 +158,12 @@ void Ioface::EstimateFeatureDistance(const cv::Mat& landmarks)
 	if (DistScale > 1.0f)
 	{
 		DistScale = 1.f - (DistScale - 1.f);
-		if (DistScale < 0.5f)
-			DistScale = 0.5f;
 	}
 	else if (DistScale < 1.0f)
 	{
 		DistScale = 1.f + (1.0f - DistScale);
+		if (DistScale > 1.5f)
+			DistScale = 1.5f;
 	}
 
 	// calculate eye aspect ratio
@@ -239,7 +239,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		1.2,
 		2,
 		0,
-		cv::Size(250, 250) // the bigger the lighter, but can't see smoll face
+		cv::Size(150, 150) // the bigger the lighter, but can't see smoll face
 	);
 
 	if (facesRect.size() > 0)

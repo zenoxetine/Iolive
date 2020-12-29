@@ -1,5 +1,4 @@
 #include "Window.hpp"
-#include "Logger.hpp"
 #include <stdexcept>
 #include <thread>
 #include <chrono>
@@ -7,8 +6,6 @@
 namespace Iolive {
 	void Window::Create(const char* title, int width, int height)
 	{
-		auto _stackElapsed = StackLogger("Window Creation");
-
 		glfwInit();
 
 		s_Window = glfwCreateWindow(width, height, title, NULL, NULL);

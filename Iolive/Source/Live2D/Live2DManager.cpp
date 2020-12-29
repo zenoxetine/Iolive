@@ -8,8 +8,8 @@ bool Live2DManager::Init()
 	if (!CubismFramework::IsInitialized())
 	{
 		// Initialize CubismFramework
-		s_CubismOption.LoggingLevel = CubismFramework::Option::LogLevel_Warning;
-		s_CubismOption.LogFunction = [](const char* message) { std::printf("%s", message); };
+		s_CubismOption.LoggingLevel = CubismFramework::Option::LogLevel_Verbose;
+		s_CubismOption.LogFunction = [](const char* message) { s_LogFunc(message); };
 		CubismFramework::StartUp(&s_CubismAllocator, &s_CubismOption);
 		CubismFramework::Initialize();
 	}
@@ -48,15 +48,18 @@ bool Live2DManager::SetModel(const wchar_t* modelJson)
 	std::wstring modelFilename = modelPath.filename().wstring();
 
 	// create new model!
+	s_LogFunc("[Live2DManager][I] Creating new model ...\n");
 	s_Model2D = new Model2D(modelSetting, modelDir.data(), modelFilename.data());
 	if (s_Model2D->IsInitialized())
 	{
+		s_LogFunc("[Live2DManager][I] New model initialized\n");
 		SetupIndexOfDefaultParameter();
 		s_IsModelChanged = true; // signal
 		return true;
 	}
 	else
 	{
+		s_LogFunc("[Live2DManager][E] Error while creating new model\n");
 		// error while creating new model
 		TryDeleteModel();
 		return false;
@@ -69,18 +72,17 @@ bool Live2DManager::CheckModelSetting(ICubismModelSetting* modelSetting)
 	const char* mocFilename = modelSetting->GetModelFileName();
 	if (strlen(mocFilename) == 0)
 	{
-		// can't found .moc3 file from json
-		// please use the correct live2d model json!
+		s_LogFunc("[Live2DManager][E] Can't found .moc3 from the json file\n");
 		return false;
 	}
 
-	// can't load model that contains a unicode in the filename
 	for (int i = 0; i < strlen(mocFilename); i++)
 	{
 		if (mocFilename[i] < 0)
 		{
 			// seems "model filename" contains unicode value, ex: japanese text
 			// JsonParser from CubismFramework doesn't support wchar_t and will return an unexpected value
+			s_LogFunc("[Live2DManager][E] Can't load model that contains a unicode in the filename\n");
 			return false;
 		}
 	}
@@ -107,6 +109,18 @@ void Live2DManager::SetupIndexOfDefaultParameter()
 		else if (strcmp(paramIds[paramIndex], "PARAM_ANGLE_Z") == 0 ||
 				 strcmp(paramIds[paramIndex], "ParamAngleZ") == 0)
 			IndexOfDefaultParameter.ParamAngleZ = paramIndex;
+	
+		else if(strcmp(paramIds[paramIndex], "PARAM_BODY_ANGLE_X") == 0 ||
+				strcmp(paramIds[paramIndex], "ParamBodyAngleX") == 0)
+			IndexOfDefaultParameter.ParamBodyAngleX = paramIndex;
+
+		else if (strcmp(paramIds[paramIndex], "PARAM_BODY_ANGLE_Y") == 0 ||
+				 strcmp(paramIds[paramIndex], "ParamBodyAngleY") == 0)
+			IndexOfDefaultParameter.ParamBodyAngleY = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BODY_ANGLE_Z") == 0 ||
+				 strcmp(paramIds[paramIndex], "ParamBodyAngleZ") == 0)
+			IndexOfDefaultParameter.ParamBodyAngleZ = paramIndex;
 
 		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_L_OPEN") == 0 ||
 			strcmp(paramIds[paramIndex], "ParamEyeLOpen") == 0)
@@ -115,9 +129,21 @@ void Live2DManager::SetupIndexOfDefaultParameter()
 		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_R_OPEN") == 0 ||
 			strcmp(paramIds[paramIndex], "ParamEyeROpen") == 0)
 			IndexOfDefaultParameter.ParamEyeROpen = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_L_FORM") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeLSmile") == 0)
+			IndexOfDefaultParameter.ParamEyeLSmile = paramIndex;
+
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_R_FORM") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeRSmile") == 0)
+			IndexOfDefaultParameter.ParamEyeRSmile = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_FORM") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeForm") == 0)
+			IndexOfDefaultParameter.ParamEyeForm = paramIndex;
 
 		else if (strcmp(paramIds[paramIndex], "PARAM_MOUTH_OPEN_Y") == 0 ||
-			strcmp(paramIds[paramIndex], "ParamMouthOpenY") == 0)
+			strncmp(paramIds[paramIndex], "ParamMouthOpen", 14) == 0)
 			IndexOfDefaultParameter.ParamMouthOpenY = paramIndex;
 		
 		else if (strcmp(paramIds[paramIndex], "PARAM_MOUTH_FORM") == 0 ||
@@ -131,6 +157,22 @@ void Live2DManager::SetupIndexOfDefaultParameter()
 		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_R_Y") == 0 ||
 			strcmp(paramIds[paramIndex], "ParamBrowRY") == 0)
 			IndexOfDefaultParameter.ParamBrowRY = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_L_FORM") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamBrowLForm") == 0)
+			IndexOfDefaultParameter.ParamBrowLForm = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_R_FORM") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamBrowRForm") == 0)
+			IndexOfDefaultParameter.ParamBrowRForm = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_L_ANGLE") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamBrowLAngle") == 0)
+			IndexOfDefaultParameter.ParamBrowLAngle = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_BROW_R_ANGLE") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamBrowRAngle") == 0)
+			IndexOfDefaultParameter.ParamBrowRAngle = paramIndex;
 	}
 }
 
@@ -147,6 +189,7 @@ void Live2DManager::TryDeleteModel()
 {
 	if (s_Model2D)
 	{
+		s_LogFunc("[Live2DManager][I] Delete model ...\n");
 		delete s_Model2D;
 		s_Model2D = nullptr;
 		ReleaseAllParameterBinding();

@@ -53,9 +53,9 @@ public:
 	float AngleX = 0.0f;
 	float AngleY = 0.0f;
 	float AngleZ = 0.0f;
-	float LeftEAR = 0.3f;
-	float RightEAR = 0.3f;
-	float EAR = 0.2f; // average of left & right EAR
+	float LeftEAR = 0.0f;
+	float RightEAR = 0.0f;
+	float EAR = 0.0f; // average of left & right EAR
 	float MouthOpenY = 0.0f;
 	float MouthForm = 1.0f;
 	float EyeBrowLY = 0.0f;

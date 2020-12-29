@@ -10,7 +10,6 @@
 #include "../Utility.hpp"
 
 #include <string>
-#include <map>
 
 namespace Iolive {
 
@@ -28,24 +27,25 @@ public:
 
 			if (ImGui::BeginTabBar("Main TabBar", ImGuiTabBarFlags_None))
 			{
-				if (ImGui::BeginTabItem("Model"))
+				if (ImGui::BeginTabItem("Common"))
 				{
-					// [Button] Open model
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 16.f);
-					if (ImGui::Button(Live2DManager::IsModelInitialized() ? "Change Model" : "Open Model", ImVec2(widgetSize.x - 32, 32)))
-						OpenNewModel();
-					ImGui::PopStyleVar();
+					if (ImGui::CollapsingHeader("Face Capture", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						// [Checkbox] Face capture
+						m_Checkbox_FaceCapture.DoDraw();
+					}
 
-					// [ParameterGui]
-					ParameterGui::DoDraw();
+					if (ImGui::CollapsingHeader("Model", ImGuiTreeNodeFlags_DefaultOpen))
+					{
+						// [Button] Open model
+						ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 16.f);
+						if (ImGui::Button(Live2DManager::IsModelInitialized() ? "Change Model" : "Open Model", ImVec2(widgetSize.x - 32, 32)))
+							OpenNewModel();
+						ImGui::PopStyleVar();
 
-					ImGui::EndTabItem();
-				}
-
-				if (ImGui::BeginTabItem("Face Capture"))
-				{
-					// [Checkbox] Face capture
-					m_FaceCapture.DoDraw();
+						// [ParameterGui]
+						ParameterGui::DoDraw();
+					}
 
 					ImGui::EndTabItem();
 				}
@@ -58,6 +58,18 @@ public:
 						Window::SetMaxFPS(FPS_VALUE[m_SelectedFPS]);
 
 					ImGui::Text("Estimated FPS: %.0f", io.Framerate);
+
+					ImGui::Text("Log:");
+					ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+					ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 3.0f);
+					if (ImGui::BeginChild("LogScene", ImVec2(ImGui::GetWindowWidth() - 15, 120), true))
+					{
+						LogScene.Draw();
+						ImGui::EndChild();
+					}
+					ImGui::PopStyleVar();
+					ImGui::PopStyleColor(2);
 
 					ImGui::EndTabItem();
 				}
@@ -97,7 +109,7 @@ private:
 	}
 
 public:
-	static Checkbox& GetCheckbox_FaceCapture() { return m_FaceCapture; }
+	static Checkbox& GetCheckbox_FaceCapture() { return m_Checkbox_FaceCapture; }
 	static float GetSelectedFPS() { return FPS_VALUE[m_SelectedFPS]; }
 
 public:
@@ -105,8 +117,38 @@ public:
 	inline static float FPS_VALUE[FPS_COUNT] = { 30.f, 45.f, 60.f };
 
 private:
-	inline static Checkbox m_FaceCapture = Checkbox("Enable Face Capture");
+	inline static Checkbox m_Checkbox_FaceCapture = Checkbox("Enable Face Capture");
 	inline static int m_SelectedFPS = FPS_COUNT-1;
+
+public:
+	// Log scene
+	inline static struct ExampleAppLog {
+	private:
+		inline static ImGuiTextBuffer Buf;
+		inline static bool ScrollToBottom;
+	public:
+		static void Clear() { Buf.clear(); }
+
+		static void AddLogf(const char* fmt, ...) {
+			va_list args;
+			va_start(args, fmt);
+			Buf.appendfv(fmt, args);
+			va_end(args);
+			ScrollToBottom = true;
+		}
+		
+		static void AddLog(const char* text) {
+			Buf.append(text);
+		}
+
+		static void Draw()
+		{
+			ImGui::TextUnformatted(Buf.begin());
+			if (ScrollToBottom)
+				ImGui::SetScrollHere(1.0f);
+			ScrollToBottom = false;
+		}
+	} LogScene;
 };
 
 } // namespace Iolive

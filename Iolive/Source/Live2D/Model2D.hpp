@@ -44,10 +44,11 @@ public:
 	{
 		if (!_initialized || _model == NULL) return;
 
-		// load saved parameters, ex: updated binded parameters will be loaded here
+		// load saved parameter
 		_model->LoadParameters();
 
-		/*if (_eyeBlink)
+		/* // Auto eyeblink
+		if (_eyeBlink)
 		{
 			_eyeBlink->UpdateParameters(_model, deltaTime);
 		}*/
@@ -161,18 +162,20 @@ private:
 		}
 
 		// wait until .moc3 loaded
-		if (loadModel.get() != true)
+		if (loadModel.get() != true || !_moc)
 		{
-			// error while loading .moc3, nande? wakannai.
+			// error while loading .moc3
+			CubismFramework::CoreLogFunction("[Model2D][E] Error while loading .moc3 file\n");
+			return false;
+		}
+
+		if (textureErrFlags)
+		{
+			CubismFramework::CoreLogFunction("[Model2D][E] Error while loading texture file\n");
 			return false;
 		}
 
 		SetupModelParameters();
-
-		if (textureErrFlags)
-		{
-			return false;
-		}
 
 		// create renderer first
 		CreateRenderer();

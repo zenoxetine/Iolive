@@ -20,8 +20,18 @@ namespace Iolive {
 	Application::Application()
 	  :	flags_StopCapture(true)
 	{
+		auto _stackElapsed = StackLogger([](float elapsed_ms) {
+			MainWidget::LogScene.AddLogf("[Iolive][I] App initialization passed: %.fms\n", elapsed_ms); }
+		);
+
 		Window::Create(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
+		Window::SetFrameResizedCallback(&Application::OnFrameResizedCallback);
+		Window::SetScrollCallback(&Application::OnScrollCallback);
+		Window::SetCursorPosCallback(&Application::OnCursorPosCallback);
+
 		IoliveGui::Init();
+
+		Live2DManager::SetLogFunction(&(MainWidget::LogScene.AddLogf));
 		Live2DManager::Init();
 	}
 
@@ -36,9 +46,8 @@ namespace Iolive {
 	void Application::Run()
 	{
 		Window::SetWindowVisible(true);
-		Window::SetFrameResizedCallback(&Application::OnFrameResizedCallback);
-		Window::SetScrollCallback(&Application::OnScrollCallback);
-		Window::SetCursorPosCallback(&Application::OnCursorPosCallback);
+
+		MainWidget::LogScene.AddLog("[Iolive][I] App running ...\n");
 
 		// Application loop
 		while (!Window::PollEvents())
@@ -108,28 +117,37 @@ namespace Iolive {
 	{
 		if (IofaceBridge::OpenCamera(0))
 		{
+			MainWidget::LogScene.AddLog("[Iolive][I] Successfully opened the camera\n");
+
 			// make separate thread for face capture loop
 			flags_StopCapture = false;
 			faceCaptureThread = std::thread(&Application::FaceCaptureLoop, this);
+			MainWidget::LogScene.AddLog("[Iolive][I] Face capture thread created\n");
 
 			if (Live2DManager::IsModelInitialized())
 			{
 				// bind model parameters with OptimizedParameter from IofaceBridge
 				IofaceBridge::BindDefaultParametersWithFace();
 			}
+			return true;
 		}
-
-		return IofaceBridge::IsCameraOpened();
+		else
+		{
+			MainWidget::LogScene.AddLog("[Iolive][E] Can't open the camera\n");
+			return false;
+		}
 	}
 
 	void Application::CloseCamera()
 	{
 		// tell faceCaptureThread to break the loop
+		MainWidget::LogScene.AddLog("[Iolive][I] Stopping face capture thread\n");
 		flags_StopCapture = true;
 		if (faceCaptureThread.joinable())
 			faceCaptureThread.join();
 		
 		IofaceBridge::CloseCamera();
+		MainWidget::LogScene.AddLog("[Iolive][I] Camera closed\n");
 
 		if (Live2DManager::IsModelInitialized())
 		{
@@ -147,30 +165,30 @@ namespace Iolive {
 	{
 		if (Live2DManager::IsModelInitialized())
 		{
-			float scale = yoffset / 13;
+			float scale = yoffset / 12;
 
 			float nextModelScale = Live2DManager::GetModelScale() + scale;
-			if (nextModelScale >= 0.01f)
+			if (nextModelScale >= 0.05f)
 				Live2DManager::SetModelScale(nextModelScale);
 			else
-				Live2DManager::SetModelScale(0.01f);
+				Live2DManager::SetModelScale(0.05f);
 		}
 	}
 
 	void Application::OnCursorPosCallback(bool pressed, double xpos, double ypos)
 	{
-		static bool isHasReleased = true;
+		static bool hasReleased = true;
 		static double lastX = -1.0;
 		static double lastY = -1.0;
 
 		if (!pressed)
 		{
-			isHasReleased = true; // mouse released || not clicked
+			hasReleased = true; // mouse released || not clicked
 		}
 
 		if (lastX >= 0.0 && lastY >= 0.0)
 		{
-			if (!isHasReleased && pressed && xpos > 0.0 && ypos > 0.0) // allow dragging on window screen only
+			if (!hasReleased && pressed && xpos > 0.0 && ypos > 0.0) // allow dragging on window screen only
 			{
 				if (Live2DManager::IsModelInitialized())
 				{
@@ -202,7 +220,7 @@ namespace Iolive {
 		if (pressed)
 		{
 			// start draging mouse in the next frame (if mouse isn't released)
-			isHasReleased = false;
+			hasReleased = false;
 			lastX = xpos;
 			lastY = ypos;
 		}

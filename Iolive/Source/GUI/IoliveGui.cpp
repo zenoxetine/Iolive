@@ -12,13 +12,10 @@
 
 // Access parent function
 #include "../Window.hpp"
-#include "../Logger.hpp"
 
 namespace Iolive {
 	void IoliveGui::Init()
 	{
-		auto _stackElapsed = StackLogger("GUI Initialization");
-
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
@@ -92,6 +89,7 @@ namespace Iolive {
 		static ImVec3 color_for_body = ImVec3(255.f / 255.f, 255.f / 255.f, 255.f / 255.f);
 		static ImVec3 color_for_pops = ImVec3(187.f / 255.f, 215.f / 255.f, 109.f / 255.f);
 
+		style.Colors[ImGuiCol_CheckMark] = ImVec4(0.05f, 0.80f, 0.05f, 1.0f);
 		style.Colors[ImGuiCol_WindowBg] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.95f);
 		style.Colors[ImGuiCol_Border] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.00f);
 		style.Colors[ImGuiCol_BorderShadow] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.00f);
@@ -106,7 +104,6 @@ namespace Iolive {
 		style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.5f);
 		style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.75f);
 		style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 1.00f);
-		style.Colors[ImGuiCol_CheckMark] = ImVec4(color_for_pops.x, color_for_pops.y, color_for_pops.z, 1.0f);
 		style.Colors[ImGuiCol_SliderGrab] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.75f);
 		style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 1.00f);
 		style.Colors[ImGuiCol_Button] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.75f);

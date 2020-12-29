@@ -5,9 +5,10 @@
 class StackLogger
 {
 public:
-	StackLogger::StackLogger(const char* name)
+	StackLogger::StackLogger(const StackLogger&) = delete;
+	StackLogger::StackLogger(void(*destroyedCallback)(float elapsed_ms))
 	:	m_Start(std::chrono::high_resolution_clock::now()),
-		m_Name(name)
+		m_DestroyedCallback(destroyedCallback)
 	{
 	}
 
@@ -15,10 +16,11 @@ public:
 	{
 		auto end = std::chrono::high_resolution_clock::now();
 		float elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - m_Start).count();
-		std::printf("[%s] Passed: %.3fms\n", m_Name, elapsed_ms);
+		if (m_DestroyedCallback)
+			m_DestroyedCallback(elapsed_ms);
 	}
 
 private:
 	std::chrono::steady_clock::time_point m_Start;
-	const char* m_Name;
+	void (*m_DestroyedCallback)(float) = nullptr;
 };
