@@ -1,11 +1,15 @@
 #pragma once
 
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 namespace Iolive {
 	class Window {
 	public:
+		Window() = delete;
+
 		static void Create(const char* title, int width, int height);
 		static void Destroy();
 

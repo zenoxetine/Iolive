@@ -4,6 +4,8 @@ namespace Iolive {
 	class IoliveGui
 	{
 	public:
+		IoliveGui() = delete;
+
 		static void Init();
 		static void Shutdown();
 		static void OnDraw();

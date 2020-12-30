@@ -59,6 +59,7 @@ PRIVATE
 	Source/Application.hpp
 	Source/Window.hpp
 	Source/IofaceBridge.hpp
+	Source/ParameterBridge.hpp
 	Source/MathUtils.hpp
 	Source/Logger.hpp
 	Source/Live2D/Live2DManager.hpp

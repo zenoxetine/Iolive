@@ -1,8 +1,8 @@
-#include "Utility.hpp"
 #include <windows.h>
+#include "Utility.hpp"
 
 namespace Utility {
-    std::wstring WOpenFileDialog(const wchar_t* filter)
+    std::wstring WOpenFileDialog(const wchar_t* filter, HWND owner)
     {
         OPENFILENAMEW ofn;
         ZeroMemory(&ofn, sizeof(ofn));
@@ -10,7 +10,7 @@ namespace Utility {
         WCHAR filePath[MAX_PATH] = L"";
 
         ofn.lStructSize = sizeof(OPENFILENAME);
-        ofn.hwndOwner = NULL;
+        ofn.hwndOwner = owner;
         ofn.lpstrFilter = filter;
         ofn.lpstrFile = filePath;
         ofn.nMaxFile = MAX_PATH;

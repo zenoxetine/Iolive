@@ -5,8 +5,10 @@
 #include "Component/Checkbox.hpp"
 
 // Access parent function
-#include "../../Live2D/Live2DManager.hpp"
 #include "../../Window.hpp"
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+#include "../../Live2D/Live2DManager.hpp"
 #include "../Utility.hpp"
 
 #include <string>
@@ -16,10 +18,12 @@ namespace Iolive {
 class MainWidget
 {
 public:
+	MainWidget() = delete;
+
 	static void DoDraw()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		ImGui::SetNextWindowSize(ImVec2(330, io.DisplaySize.y), ImGuiCond_Once);
+		ImGui::SetNextWindowSize(ImVec2(320, io.DisplaySize.y), ImGuiCond_Once);
 		{
 			ImGui::Begin("Main Widget");
 
@@ -33,6 +37,11 @@ public:
 					{
 						// [Checkbox] Face capture
 						m_Checkbox_FaceCapture.DoDraw();
+
+						if (m_Checkbox_FaceCapture.IsChecked())
+						{
+							m_Checkbox_EqualizeEyes.DoDraw();
+						}
 					}
 
 					if (ImGui::CollapsingHeader("Model", ImGuiTreeNodeFlags_DefaultOpen))
@@ -52,7 +61,7 @@ public:
 
 				if (ImGui::BeginTabItem("Settings"))
 				{
-					const char* fpsStr[FPS_COUNT] = { "30", "45", "60" };
+					const char* fpsStr[FPS_COUNT] = { "30", "45", "60", "75" };
 					const char* fpsStrShowed = fpsStr[m_SelectedFPS];
 					if (ImGui::SliderInt("Set FPS", &m_SelectedFPS, 0, FPS_COUNT-1, fpsStrShowed))
 						Window::SetMaxFPS(FPS_VALUE[m_SelectedFPS]);
@@ -86,7 +95,7 @@ private:
 	*/
 	static void OpenNewModel()
 	{
-		std::wstring filePath = Utility::WOpenFileDialog(L"Live2D JSON File (*.model3.json)\000*.model3.json\000");
+		std::wstring filePath = Utility::WOpenFileDialog(L"Live2D JSON File (*.model3.json)\000*.model3.json\000", glfwGetWin32Window(Window::GetWindow()));
 		if (filePath.size() > 0)
 		{
 			// clear ParameterGui
@@ -110,15 +119,17 @@ private:
 
 public:
 	static Checkbox& GetCheckbox_FaceCapture() { return m_Checkbox_FaceCapture; }
+	static Checkbox& GetCheckbox_EqualizeEyes() { return m_Checkbox_EqualizeEyes; }
 	static float GetSelectedFPS() { return FPS_VALUE[m_SelectedFPS]; }
 
 public:
-	inline static constexpr int FPS_COUNT = 3;
-	inline static float FPS_VALUE[FPS_COUNT] = { 30.f, 45.f, 60.f };
+	inline static constexpr int FPS_COUNT = 4;
+	inline static float FPS_VALUE[FPS_COUNT] = { 30.f, 45.f, 60.f, 75.f };
 
 private:
-	inline static Checkbox m_Checkbox_FaceCapture = Checkbox("Enable Face Capture");
-	inline static int m_SelectedFPS = FPS_COUNT-1;
+	inline static Checkbox m_Checkbox_FaceCapture = Checkbox("Enable Face Capture", false);
+	inline static Checkbox m_Checkbox_EqualizeEyes = Checkbox("Equalize eye parameters", true);
+	inline static int m_SelectedFPS = 2; // 60 FPS
 
 public:
 	// Log scene

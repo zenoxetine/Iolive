@@ -12,8 +12,13 @@ namespace MathUtils {
 		return (value - min) / (max - min);
 	};
 
-	float Abs(float value)
+	inline float Abs(float value)
 	{
 		return std::abs(value);
+	}
+
+	inline float Difference(float value1, float value2)
+	{
+		return std::abs(std::abs(value1) - std::abs(value2));
 	}
 }

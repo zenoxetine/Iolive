@@ -11,6 +11,8 @@
 class Live2DManager
 {
 public:
+	Live2DManager() = delete;
+
 	static bool Init();
 	static void Release();
 
@@ -31,13 +33,13 @@ public:
 	static void OnDraw(int width, int height);
 
 	static void SetParameterBinding(int index, float* ptrValue);
+	static std::map<int, float*>& GetBindedParameterMap() { return s_ParameterBinding; }
 	static void ReleaseAllParameterBinding();
 
 	static std::map<const char*, float> GetParameterMap();
 	static std::vector<std::array<float, 2>> GetParameterMinMax();
 
 private:
-	Live2DManager();
 	static bool CheckModelSetting(ICubismModelSetting* modelSetting);
 	static void SetupIndexOfDefaultParameter();
 	static void TryDeleteModel();
@@ -58,6 +60,8 @@ public:
 		int ParamEyeLSmile = -1;
 		int ParamEyeRSmile = -1;
 		int ParamEyeForm = -1;
+		int ParamEyeBallX = -1;
+		int ParamEyeBallY = -1;
 		int ParamMouthOpenY = -1;
 		int ParamMouthForm = -1;
 		int ParamBrowLY = -1;
@@ -83,6 +87,8 @@ public:
 		float ParamEyeLSmile = 0.0f;
 		float ParamEyeRSmile = 0.0f;
 		float ParamEyeForm = 0.0f;
+		float ParamEyeBallX = 0.0f;
+		float ParamEyeBallY = 0.0f;
 		float ParamMouthOpenY = 0.0f;
 		float ParamMouthForm = 1.0f;
 		float ParamBrowLY = 0.0f;

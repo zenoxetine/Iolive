@@ -29,7 +29,7 @@ public:
 	void CloseCamera();
 
 	bool IsFrameEmpty() const { return m_Frame.empty(); }
-	bool IsLandmarksEmpty() const { return m_Landmarks.empty(); }
+	bool IsDetected() const { return m_IsDetected; }
 
 	void UpdateAll();
 
@@ -71,5 +71,7 @@ private:
 	std::unique_ptr<INTRAFACE::XXDescriptor> m_XXD;
 	std::unique_ptr<INTRAFACE::FaceAlignment> m_FaceAlignment;
 	INTRAFACE::HeadPose m_HeadPose;
+
 	cv::Mat m_Landmarks; // 49 facial landmarks
+	bool m_IsDetected;
 };

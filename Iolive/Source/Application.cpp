@@ -7,6 +7,7 @@
 #include "GUI/Widget/ParameterGui.hpp"
 #include "Window.hpp"
 #include "IofaceBridge.hpp"
+#include "ParameterBridge.hpp"
 #include "Live2D/Live2DManager.hpp"
 
 #include "Logger.hpp"
@@ -74,7 +75,7 @@ namespace Iolive {
 			}
 		}
 
-		IofaceBridge::DoOptimizeParameters();
+		ParameterBridge::DoOptimizeParameters();
 
 		if (Live2DManager::IsModelChanged())
 		{
@@ -82,7 +83,7 @@ namespace Iolive {
 			{
 				// there's a new model and camera opened
 				// but model parameter wasn't binded with face capture. Bind it now
-				IofaceBridge::BindDefaultParametersWithFace();
+				ParameterBridge::BindDefaultParametersWithFace();
 			}
 		}
 
@@ -115,7 +116,8 @@ namespace Iolive {
 
 	bool Application::OpenCamera()
 	{
-		if (IofaceBridge::OpenCamera(0))
+		constexpr int camId = 0; // default camera
+		if (IofaceBridge::OpenCamera(camId))
 		{
 			MainWidget::LogScene.AddLog("[Iolive][I] Successfully opened the camera\n");
 
@@ -127,7 +129,7 @@ namespace Iolive {
 			if (Live2DManager::IsModelInitialized())
 			{
 				// bind model parameters with OptimizedParameter from IofaceBridge
-				IofaceBridge::BindDefaultParametersWithFace();
+				ParameterBridge::BindDefaultParametersWithFace();
 			}
 			return true;
 		}
@@ -152,7 +154,7 @@ namespace Iolive {
 		if (Live2DManager::IsModelInitialized())
 		{
 			// bind model parameters with the gui
-			IofaceBridge::BindDefaultParametersWithGui();
+			ParameterBridge::BindDefaultParametersWithGui();
 		}
 	}
 

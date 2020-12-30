@@ -141,6 +141,14 @@ void Live2DManager::SetupIndexOfDefaultParameter()
 		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_FORM") == 0 ||
 			strcmp(paramIds[paramIndex], "ParamEyeForm") == 0)
 			IndexOfDefaultParameter.ParamEyeForm = paramIndex;
+		
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_BALL_X") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeBallX") == 0)
+			IndexOfDefaultParameter.ParamEyeBallX = paramIndex;
+
+		else if (strcmp(paramIds[paramIndex], "PARAM_EYE_BALL_Y") == 0 ||
+			strcmp(paramIds[paramIndex], "ParamEyeBallY") == 0)
+			IndexOfDefaultParameter.ParamEyeBallY = paramIndex;
 
 		else if (strcmp(paramIds[paramIndex], "PARAM_MOUTH_OPEN_Y") == 0 ||
 			strncmp(paramIds[paramIndex], "ParamMouthOpen", 14) == 0)

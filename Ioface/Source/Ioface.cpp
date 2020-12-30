@@ -2,12 +2,14 @@
 // #include <iostream>
 #include <vector>
 #include <cmath>
+#include <thread>
+#include <chrono>
 
-// #define INGFO std::cout << "[IOFACE][INFO] " // for debuging purpose
+// #define INGFO std::cout << "[IOFACE][INFO] " // for debuging
 #define L2Norm(p1, p2) std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2))
 
 Ioface::Ioface()
-  :	m_Initialized(false)
+  :	m_Initialized(false), m_IsDetected(false)
 {
 	const char* fa_detection_model = "./Assets/models/DetectionModel-v1.5.bin";
 	const char* fa_tracking_model = "./Assets/models/TrackingModel-v1.10.bin";
@@ -98,7 +100,12 @@ void Ioface::UpdateParameters()
 	else
 	{
 		auto faceRect = DetectFirstFace(m_Frame);
-		if (!faceRect.has_value()) return; // check if there's a face in the frame
+		if (!faceRect.has_value()) // check if there's a face in the frame
+		{
+			// sleep a little bit, because detecting face again and again, is heavy.
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			return;
+		}
 
 		// detect face landmarks
 		if (m_FaceAlignment->Detect(m_Frame, faceRect.value(), m_Landmarks, score) == INTRAFACE::IF_OK)
@@ -110,11 +117,13 @@ void Ioface::UpdateParameters()
 
 	if (score > 0.5)
 	{
+		m_IsDetected = true;
 		DoUpdateParameters();
 	}
 	else
 	{
 		// don't track, because the landmarks is not reliable
+		m_IsDetected = false;
 		doTrackLandmarks = false;
 	}
 }

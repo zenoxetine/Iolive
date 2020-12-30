@@ -86,7 +86,7 @@ namespace Iolive {
 
 		static ImVec3 color_for_head = ImVec3(232.f / 255.f, 164.f / 255.f, 160.f / 255.f);
 		static ImVec3 color_for_area = ImVec3(238.f / 255.f, 220.f / 255.f, 215.f / 255.f);
-		static ImVec3 color_for_body = ImVec3(255.f / 255.f, 255.f / 255.f, 255.f / 255.f);
+		static ImVec3 color_for_body = ImVec3(254.f / 255.f, 254.f / 255.f, 254.f / 255.f);
 		static ImVec3 color_for_pops = ImVec3(187.f / 255.f, 215.f / 255.f, 109.f / 255.f);
 
 		style.Colors[ImGuiCol_CheckMark] = ImVec4(0.05f, 0.80f, 0.05f, 1.0f);
