@@ -22,6 +22,7 @@ namespace Iolive {
 		static void UpdateDeltaTime();
 
 		static void SetWindowVisible(bool visible);
+		static void SetWindowOpacity(float value);
 		static void SetMaxFPS(float maxFPS) { s_MaxFPS = maxFPS; }
 		
 		/*
@@ -36,7 +37,7 @@ namespace Iolive {
 		static double GetDeltaTime() { return s_DeltaTime; }
 
 	private:
-		// callback from glfw
+		// glfw callback
 		static void FrameResizedCallback(GLFWwindow* window, int width, int height);
 		static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 		static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);

@@ -3,6 +3,7 @@
 #include <thread>
 
 namespace Iolive {
+	
 	class Application
 	{
 	public:
@@ -50,4 +51,5 @@ namespace Iolive {
 		// just a flags
 		bool flags_StopCapture;
 	};
-}
+
+} // namespace Iolive

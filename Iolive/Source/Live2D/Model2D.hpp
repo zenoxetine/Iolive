@@ -47,11 +47,10 @@ public:
 		// load saved parameter
 		_model->LoadParameters();
 
-		/* // Auto eyeblink
-		if (_eyeBlink)
+		if (_breath)
 		{
-			_eyeBlink->UpdateParameters(_model, deltaTime);
-		}*/
+			_breath->UpdateParameters(_model, deltaTime);
+		}
 
 		if (_pose)
 		{
@@ -202,31 +201,23 @@ private:
 
 	void SetupModelParameters()
 	{
-		CubismIdHandle idParamEyeLOpen;
-		CubismIdHandle idParamEyeROpen;
-
+		CubismIdHandle idParamBreath = NULL;
+		
 		csmVector<CubismIdHandle> _ids = GetModel()->GetParameterIdHandles();
 		for (csmUint32 i = 0; i < _ids.GetSize(); ++i)
 		{
 			csmString Id = _ids[i]->GetString();
-			if (Id == "ParamEyeLOpen" || Id == "PARAM_EYE_L_OPEN")	idParamEyeLOpen = _ids[i];
-			else if (Id == "ParamEyeROpen" || Id == "PARAM_EYE_R_OPEN")	idParamEyeROpen = _ids[i];
+			if (Id == "ParamBreath" || Id == "PARAM_BREATH") { idParamBreath = _ids[i]; break; }
 		}
 
-		// setup eyeblink
-		_eyeBlink = CubismEyeBlink::Create(m_ModelSetting);
-		if (m_ModelSetting->GetEyeBlinkParameterCount() > 0)
-		{
-			// eyeblink using parameter from model setting
-			for (csmInt32 i = 0; i < m_ModelSetting->GetEyeBlinkParameterCount(); i++)
-				m_EyeBlinkIds.PushBack(m_ModelSetting->GetEyeBlinkParameterId(i));
-		}
-		else {
-			// eyeblink using default eye parameter
-			m_EyeBlinkIds.PushBack(idParamEyeLOpen);
-			m_EyeBlinkIds.PushBack(idParamEyeROpen);
-		}
-		_eyeBlink->SetParameterIds(m_EyeBlinkIds);
+		// Setup breath
+		_breath = CubismBreath::Create();
+		csmVector<CubismBreath::BreathParameterData> breathParameters;
+		if (idParamBreath != NULL)
+			breathParameters.PushBack(CubismBreath::BreathParameterData(idParamBreath, 0.5f, 0.5f, 3.8f, 0.5f));
+
+		// Set breath data
+		_breath->SetParameters(breathParameters);
 	}
 
 private:

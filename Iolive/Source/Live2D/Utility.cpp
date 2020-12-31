@@ -10,7 +10,7 @@ namespace Utility {
 	{
 		int fileSize = 0;
 
-		// known file size (from wchar_t)
+		// known file size
 		struct _stat64i32 statBuf;
 		if (_wstat64i32(filePath, &statBuf) == 0)
 		{

@@ -26,4 +26,4 @@ namespace Utility {
 
         return filePathWStr;
     }
-}
+} // namespace Utility

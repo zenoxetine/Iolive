@@ -24,8 +24,9 @@ public:
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		ImGui::SetNextWindowSize(ImVec2(320, io.DisplaySize.y), ImGuiCond_Once);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(250, 400));
 		{
-			ImGui::Begin("Main Widget");
+			ImGui::Begin("Main Iolive GUI");
 
 			ImVec2 widgetSize = ImGui::GetWindowSize();
 
@@ -40,7 +41,11 @@ public:
 
 						if (m_Checkbox_FaceCapture.IsChecked())
 						{
+							ImGui::Spacing(); ImGui::SameLine();
 							m_Checkbox_EqualizeEyes.DoDraw();
+
+							ImGui::Spacing(); ImGui::SameLine();
+							m_Checkbox_EyeballFollowCursor.DoDraw();
 						}
 					}
 
@@ -61,10 +66,19 @@ public:
 
 				if (ImGui::BeginTabItem("Settings"))
 				{
+					ImGui::PushItemWidth(ImGui::GetWindowSize().x/2);
+
+					ImGui::ColorEdit3("Clear Color", m_ColorEdit_ClearColor, ImGuiColorEditFlags_DisplayRGB);
+
+					if (ImGui::SliderFloat("Window Opacity", &m_WindowOpacity, 0.0f, 1.0f))
+						Window::SetWindowOpacity(m_WindowOpacity);
+
 					const char* fpsStr[FPS_COUNT] = { "30", "45", "60", "75" };
 					const char* fpsStrShowed = fpsStr[m_SelectedFPS];
-					if (ImGui::SliderInt("Set FPS", &m_SelectedFPS, 0, FPS_COUNT-1, fpsStrShowed))
+					if (ImGui::SliderInt("FPS (not accurate)", &m_SelectedFPS, 0, FPS_COUNT-1, fpsStrShowed))
 						Window::SetMaxFPS(FPS_VALUE[m_SelectedFPS]);
+					
+					ImGui::PopItemWidth();
 
 					ImGui::Text("Estimated FPS: %.0f", io.Framerate);
 
@@ -87,6 +101,8 @@ public:
 
 			ImGui::End();
 		}
+
+		ImGui::PopStyleVar();
 	}
 
 private:
@@ -120,6 +136,8 @@ private:
 public:
 	static Checkbox& GetCheckbox_FaceCapture() { return m_Checkbox_FaceCapture; }
 	static Checkbox& GetCheckbox_EqualizeEyes() { return m_Checkbox_EqualizeEyes; }
+	static Checkbox& GetCheckbox_EyeballFollowCursor() { return m_Checkbox_EyeballFollowCursor; }
+	static float* GetClearColor() { return m_ColorEdit_ClearColor; }
 	static float GetSelectedFPS() { return FPS_VALUE[m_SelectedFPS]; }
 
 public:
@@ -128,8 +146,11 @@ public:
 
 private:
 	inline static Checkbox m_Checkbox_FaceCapture = Checkbox("Enable Face Capture", false);
-	inline static Checkbox m_Checkbox_EqualizeEyes = Checkbox("Equalize eye parameters", true);
+	inline static Checkbox m_Checkbox_EqualizeEyes = Checkbox("Equalize Eye Parameters", true);
+	inline static Checkbox m_Checkbox_EyeballFollowCursor = Checkbox("Eye Ball Follow Cursor", true);
+	inline static float m_ColorEdit_ClearColor[3] = { 0.0f, 1.0f, 0.0f }; // default green
 	inline static int m_SelectedFPS = 2; // 60 FPS
+	inline static float m_WindowOpacity = 1.0f;
 
 public:
 	// Log scene

@@ -79,17 +79,21 @@ namespace Iolive {
 	void IoliveGui::SetupGuiTheme()
 	{
 		// make a good imgui style here
-
-        ImGuiStyle& style = ImGui::GetStyle();
+		
+		ImGuiStyle& style = ImGui::GetStyle();
 
 		struct ImVec3 { float x, y, z; ImVec3(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) { x = _x; y = _y; z = _z; } };
 
-		static ImVec3 color_for_head = ImVec3(232.f / 255.f, 164.f / 255.f, 160.f / 255.f);
+		static ImVec3 color_for_head = ImVec3(245.f / 255.f, 144.f / 255.f, 158.f / 255.f);
 		static ImVec3 color_for_area = ImVec3(238.f / 255.f, 220.f / 255.f, 215.f / 255.f);
 		static ImVec3 color_for_body = ImVec3(254.f / 255.f, 254.f / 255.f, 254.f / 255.f);
-		static ImVec3 color_for_pops = ImVec3(187.f / 255.f, 215.f / 255.f, 109.f / 255.f);
+		static ImVec3 color_for_tab = ImVec3(198.f / 255.f, 235.f / 255.f, 105.f / 255.f);
+		static ImVec3 color_for_text = ImVec3(29.f / 255.f, 39.f / 255.f, 53.f / 255.f);
 
 		style.Colors[ImGuiCol_CheckMark] = ImVec4(0.05f, 0.80f, 0.05f, 1.0f);
+		style.Colors[ImGuiCol_Text] = ImVec4(color_for_text.x, color_for_text.y, color_for_text.z, 1.0f);
+		style.Colors[ImGuiCol_TextDisabled] = ImVec4(color_for_text.x, color_for_text.y, color_for_text.z, 0.55f);
+		style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.50f);
 		style.Colors[ImGuiCol_WindowBg] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.95f);
 		style.Colors[ImGuiCol_Border] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.00f);
 		style.Colors[ImGuiCol_BorderShadow] = ImVec4(color_for_body.x, color_for_body.y, color_for_body.z, 0.00f);
@@ -115,11 +119,9 @@ namespace Iolive {
 		style.Colors[ImGuiCol_ResizeGrip] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.90f);
 		style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.75f);
 		style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 1.00f);
-		style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.50f);
-		style.Colors[ImGuiCol_PopupBg] = ImVec4(color_for_pops.x, color_for_pops.y, color_for_pops.z, 0.92f);
-		style.Colors[ImGuiCol_Tab] = ImVec4(color_for_pops.x, color_for_pops.y, color_for_pops.z, 1.0f);
-		style.Colors[ImGuiCol_TabHovered] = ImVec4(color_for_pops.x, color_for_pops.y, color_for_pops.z, 0.65f);
-		style.Colors[ImGuiCol_TabActive] = ImVec4(color_for_pops.x, color_for_pops.y, color_for_pops.z, 0.65f);
+		style.Colors[ImGuiCol_Tab] = ImVec4(color_for_tab.x, color_for_tab.y, color_for_tab.z, 1.0f);
+		style.Colors[ImGuiCol_TabHovered] = ImVec4(color_for_tab.x, color_for_tab.y, color_for_tab.z, 0.65f);
+		style.Colors[ImGuiCol_TabActive] = ImVec4(color_for_tab.x, color_for_tab.y, color_for_tab.z, 0.65f);
 		style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(color_for_area.x, color_for_area.y, color_for_area.z, 0.73f);
 	}
 } // namespace Iolive

@@ -5,7 +5,7 @@ else()
 	set(USE_SUBSYSTEM_WINDOWS WIN32)
 endif()
 
-add_executable(Iolive ${USE_SUBSYSTEM_WINDOWS})
+add_executable(Iolive ${USE_SUBSYSTEM_WINDOWS} Iolive.rc)
 
 set(IOLIVE_VENDOR_PATH ${CMAKE_CURRENT_SOURCE_DIR}/Vendor CACHE INTERNAL "")
 set(GLFW_PATH ${IOLIVE_VENDOR_PATH}/glfw)

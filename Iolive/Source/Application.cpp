@@ -4,7 +4,6 @@
 // many of these, are a static class method
 #include "GUI/IoliveGui.hpp"
 #include "GUI/Widget/MainWidget.hpp"
-#include "GUI/Widget/ParameterGui.hpp"
 #include "Window.hpp"
 #include "IofaceBridge.hpp"
 #include "ParameterBridge.hpp"
@@ -13,8 +12,8 @@
 #include "Logger.hpp"
 #include "MathUtils.hpp"
 
-#define WINDOW_WIDTH 540
-#define WINDOW_HEIGHT 670
+#define WINDOW_WIDTH 550
+#define WINDOW_HEIGHT 680
 #define WINDOW_TITLE "Iolive"
 
 namespace Iolive {
@@ -22,8 +21,8 @@ namespace Iolive {
 	  :	flags_StopCapture(true)
 	{
 		auto _stackElapsed = StackLogger([](float elapsed_ms) {
-			MainWidget::LogScene.AddLogf("[Iolive][I] App initialization passed: %.fms\n", elapsed_ms); }
-		);
+			MainWidget::LogScene.AddLogf("[Iolive][I] App initialization passed: %.fms\n", elapsed_ms);
+		});
 
 		Window::Create(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT);
 		Window::SetFrameResizedCallback(&Application::OnFrameResizedCallback);
@@ -46,8 +45,6 @@ namespace Iolive {
 
 	void Application::Run()
 	{
-		Window::SetWindowVisible(true);
-
 		MainWidget::LogScene.AddLog("[Iolive][I] App running ...\n");
 
 		// Application loop
@@ -94,9 +91,10 @@ namespace Iolive {
 	{
 		int width, height;
 		Window::GetWindowSize(&width, &height);
-
 		glViewport(0, 0, width, height);
-		glClearColor(0.2, 0.9f, 0.2f, 1.0f);
+
+		float* clearColor = MainWidget::GetClearColor();
+		glClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		Live2DManager::OnDraw(width, height);
@@ -121,14 +119,14 @@ namespace Iolive {
 		{
 			MainWidget::LogScene.AddLog("[Iolive][I] Successfully opened the camera\n");
 
-			// make separate thread for face capture loop
+			// create separate thread for face capture loop
 			flags_StopCapture = false;
 			faceCaptureThread = std::thread(&Application::FaceCaptureLoop, this);
 			MainWidget::LogScene.AddLog("[Iolive][I] Face capture thread created\n");
 
 			if (Live2DManager::IsModelInitialized())
 			{
-				// bind model parameters with OptimizedParameter from IofaceBridge
+				// bind model parameters with Ioface
 				ParameterBridge::BindDefaultParametersWithFace();
 			}
 			return true;

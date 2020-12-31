@@ -9,7 +9,6 @@ namespace Iolive {
 		glfwInit();
 
 		s_Window = glfwCreateWindow(width, height, title, NULL, NULL);
-		SetWindowVisible(false);
 
 		// create window context first
 		glfwMakeContextCurrent(s_Window);
@@ -78,6 +77,11 @@ namespace Iolive {
 	void Window::SetWindowVisible(bool visible)
 	{
 		glfwSetWindowAttrib(s_Window, GLFW_VISIBLE, visible);
+	}
+	
+	void Window::SetWindowOpacity(float value)
+	{
+		glfwSetWindowOpacity(s_Window, value);
 	}
 
 	void Window::UpdateDeltaTime()

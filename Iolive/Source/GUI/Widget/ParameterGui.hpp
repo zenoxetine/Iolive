@@ -20,7 +20,6 @@ public:
 	{
 		if (GetParameterCount() < 1) return;
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.f);
 		ImGui::PushItemWidth(150);
 
 		std::map<int, float*>& modelBindedParameter = Live2DManager::GetBindedParameterMap();
@@ -33,7 +32,7 @@ public:
 			{
 				// this parameter is not binded with the GUI. Disable this parameter
 				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.55f);
 			}
 
 			ImGui::SliderFloat(name, modelBindedParameter[paramIndex],
@@ -50,7 +49,6 @@ public:
 			paramIndex++;
 		}
 		ImGui::PopItemWidth();
-		ImGui::PopStyleVar();
 	}
 
 	static void SetParameterMap(const std::map<const char*, float>& paramMap, const std::vector<std::array<float, 2>>& paramMinMax)

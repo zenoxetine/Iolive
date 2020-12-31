@@ -6,7 +6,6 @@
 #include "GUI/Widget/MainWidget.hpp"
 #include "GUI/Widget/ParameterGui.hpp"
 #include "MathUtils.hpp"
-#include "Logger.hpp"
 
 #include <windef.h>
 #include <winuser.h>
@@ -29,13 +28,18 @@ namespace Iolive {
 	/*
 	* Get mouse x and y position
 	*/
-	void GetMousePosition(int* x, int* y)
+	bool GetMousePosition(int* x, int* y)
 	{
 		POINT mousePoint;
 		if (GetCursorPos(&mousePoint))
 		{
 			*x = mousePoint.x;
 			*y = mousePoint.y;
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 
@@ -49,10 +53,8 @@ namespace Iolive {
 			Ioface& s_Ioface = IofaceBridge::Get();
 			if (IofaceBridge::IsCameraOpened() && s_Ioface.IsDetected())
 			{
-				/* 
-				* Update Parameters from Ioface
-				*/
-
+				/* Update Parameters from Ioface */
+				
 				float deltaTime = static_cast<float>(Window::GetDeltaTime());
 				#define SMOOTH_SLOW(start, end) MathUtils::Lerp(start, end, deltaTime * 5.f)
 				#define SMOOTH_MEDIUM(start, end) MathUtils::Lerp(start, end, deltaTime * 10.f)
@@ -69,12 +71,12 @@ namespace Iolive {
 				OptimizedParameter.ParamBodyAngleZ = OptimizedParameter.ParamAngleZ * 0.2f;
 
 				// MouthOpenY
-				float normalizedMouthOpenY = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthOpenY, 3.5f, 14.0f);
+				float normalizedMouthOpenY = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthOpenY, 3.0f, 15.0f);
 				OptimizedParameter.ParamMouthOpenY = SMOOTH_FAST(OptimizedParameter.ParamMouthOpenY, normalizedMouthOpenY);
 
 				// MouthForm
-				float normalizedMouthForm = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthForm, 71.0f, 85.0f);
-				OptimizedParameter.ParamMouthForm = SMOOTH_FAST(OptimizedParameter.ParamMouthForm, normalizedMouthForm);
+				float normalizedMouthForm = MathUtils::Normalize(s_Ioface.DistScale * s_Ioface.MouthForm, 72.0f, 85.0f);
+				OptimizedParameter.ParamMouthForm = SMOOTH_MEDIUM(OptimizedParameter.ParamMouthForm, normalizedMouthForm);
 
 				if (MainWidget::GetCheckbox_EqualizeEyes().IsChecked())
 				{
@@ -115,27 +117,28 @@ namespace Iolive {
 				OptimizedParameter.ParamBrowLForm = OptimizedParameter.ParamBrowLY < 0.0f ? OptimizedParameter.ParamBrowLY : 0.0f;
 				OptimizedParameter.ParamBrowRForm = OptimizedParameter.ParamBrowLForm;
 
-				// EyeBrowAngle Follow EyeBrowForm
+				// EyeBrowAngle follow EyeBrowForm
 				OptimizedParameter.ParamBrowLAngle = OptimizedParameter.ParamBrowLForm;
 				OptimizedParameter.ParamBrowRAngle = OptimizedParameter.ParamBrowLForm;
-
+			}
+	
+			float eyeBallX = 0.0f;
+			float eyeBallY = 0.0f;
+			if (MainWidget::GetCheckbox_EyeballFollowCursor().IsChecked())
+			{
 				// Update Eye Ball X & Y parameters based on cursor position on the screen
-				static int screenWidth = 0, screenHeight = 0;
-				if (screenWidth == 0 && screenHeight == 0) Iolive::GetDesktopResolution(&screenWidth, &screenHeight); // only once
-				if (screenWidth > 0 && screenHeight > 0)
+				int screenWidth, screenHeight;
+				Iolive::GetDesktopResolution(&screenWidth, &screenHeight);
+				
+				int mouseX, mouseY;
+				if (Iolive::GetMousePosition(&mouseX, &mouseY))
 				{
-					const int midScreenWidth = screenWidth / 2;
-					const int midScreenHeight = screenHeight / 2;
-					int mouseX = midScreenWidth;
-					int mouseY = midScreenHeight;
-					Iolive::GetMousePosition(&mouseX, &mouseY);
-
-					float normalizedMouseX = MathUtils::Normalize(mouseX, midScreenWidth, screenWidth);
-					float normalizedMouseY = MathUtils::Normalize(mouseY, midScreenHeight, screenHeight);
-					OptimizedParameter.ParamEyeBallX = normalizedMouseX;
-					OptimizedParameter.ParamEyeBallY = -normalizedMouseY;
+					eyeBallX = MathUtils::Normalize(mouseX, screenWidth/2, screenWidth) / 1.5f;
+					eyeBallY = MathUtils::Normalize(mouseY, screenHeight/2, screenHeight) / 1.5f;
 				}
 			}
+			OptimizedParameter.ParamEyeBallX = eyeBallX;
+			OptimizedParameter.ParamEyeBallY = -eyeBallY;
 		}
 
 	public:
