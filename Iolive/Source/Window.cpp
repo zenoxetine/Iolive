@@ -4,92 +4,115 @@
 #include <chrono>
 
 namespace Iolive {
-	void Window::Create(const char* title, int width, int height)
+	Window* Window::Create(const char* title, int width, int height)
 	{
-		glfwInit();
+		if (!s_Window)
+			s_Window = new Window(title, width, height);
+		
+		return s_Window;
+	}
 
-		s_Window = glfwCreateWindow(width, height, title, NULL, NULL);
+	Window* Window::Get()
+	{
+		std::lock_guard<std::mutex> lock(s_MtxGetInstance);
+		return s_Window;
+	}
+
+	Window::Window(const char* title, int width, int height)
+	{
+		if (!glfwInit()) throw std::runtime_error("Can't initialize GLFW!");
+
+		m_GlfwWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+		if (!m_GlfwWindow) throw std::runtime_error("Can't create window!");
+
+		glfwSetWindowUserPointer(m_GlfwWindow, this);
 
 		// create window context first
-		glfwMakeContextCurrent(s_Window);
-
+		glfwMakeContextCurrent(m_GlfwWindow);
+		
 		// then initialize glew
 		if (glewInit() != GLEW_OK)
-		{
 			throw std::runtime_error("Can't initialize opengl loader");
-		}
 
-		glfwSetFramebufferSizeCallback(s_Window, FrameResizedCallback);
-		glfwSetScrollCallback(s_Window, ScrollCallback);
-		glfwSetCursorPosCallback(s_Window, CursorPosCallback);
-	}
+		/*
+		* Window callback
+		*/
+		glfwSetFramebufferSizeCallback(m_GlfwWindow, [](GLFWwindow* window, int width, int height) {
+			Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+			if (!(thisWindow->OnFrameResizedCallback)) return;
 
-	void Window::FrameResizedCallback(GLFWwindow* window, int width, int height)
-	{
-		if (s_OnFrameResizedCallback != nullptr)
-			s_OnFrameResizedCallback(width, height);
-	}
+			thisWindow->OnFrameResizedCallback(width, height);
+		});
 
-	void Window::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
-	{
-		if (s_OnScrollCallback != nullptr)
-			s_OnScrollCallback(xoffset, yoffset);
-	}
+		glfwSetScrollCallback(m_GlfwWindow, [](GLFWwindow* window, double xoffset, double yoffset) {
+			Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+			if (!(thisWindow->OnScrollCallback)) return;
 
-	void Window::CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
-	{
-		if (s_OnCursorPosCallback == nullptr) return;
+			thisWindow->OnScrollCallback(xoffset, yoffset);
+		});
 
-		int lMouseButtonState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	
-		if (lMouseButtonState == GLFW_PRESS)
-			s_OnCursorPosCallback(true, xpos, ypos); // pressed: true
-		else if (lMouseButtonState == GLFW_RELEASE)
-			s_OnCursorPosCallback(false, xpos, ypos); // pressed: false
+		glfwSetCursorPosCallback(m_GlfwWindow, [](GLFWwindow* window, double xpos, double ypos) {
+			Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+			if (!(thisWindow->OnCursorPosCallback)) return;
+			
+			int LMouseButtonState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+			if (LMouseButtonState == GLFW_PRESS)
+				thisWindow->OnCursorPosCallback(true, xpos, ypos); // pressed: true
+			else if (LMouseButtonState == GLFW_RELEASE)
+				thisWindow->OnCursorPosCallback(false, xpos, ypos); // pressed: false
+		});
 	}
 
 	void Window::Destroy()
 	{
-		glfwDestroyWindow(s_Window);
+		glfwDestroyWindow(m_GlfwWindow);
 		glfwTerminate();
 	}
 
 	bool Window::PollEvents()
 	{
 		glfwPollEvents();
-		return glfwWindowShouldClose(s_Window);
+		return glfwWindowShouldClose(m_GlfwWindow);
 	}
 
 	void Window::SwapWindow()
 	{
-		// cap fps
-		long msToSleep = (1000.0 / s_MaxFPS) - (s_DeltaTime * 100.0);
-		if (msToSleep > 0.0)
-			std::this_thread::sleep_for(std::chrono::milliseconds(msToSleep));
+		// swap window buffers
+		glfwSwapBuffers(m_GlfwWindow);
 
 		// update delta time
-		UpdateDeltaTime();
+		m_CurrentFrame = glfwGetTime();
+		m_DeltaTime = m_CurrentFrame - m_LastFrame;
+		m_LastFrame = m_CurrentFrame;
 
-		// swap window buffers
-		glfwSwapBuffers(s_Window);
+		// cap fps
+		long msToSleep = (1000.0 / MaxFPS) - (m_DeltaTime * 100.0);
+		if (msToSleep > 0.0)
+			std::this_thread::sleep_for(std::chrono::milliseconds(msToSleep));
 	}
 
-	void Window::SetWindowVisible(bool visible)
+	/* * * * * * * * *
+	* Getter & Setter
+	*/
+
+	GLFWwindow* Window::GetGlfwWindow()
 	{
-		glfwSetWindowAttrib(s_Window, GLFW_VISIBLE, visible);
+		return m_GlfwWindow;
 	}
-	
+
 	void Window::SetWindowOpacity(float value)
 	{
-		glfwSetWindowOpacity(s_Window, value);
+		glfwSetWindowOpacity(m_GlfwWindow, value);
 	}
 
-	void Window::UpdateDeltaTime()
+	void Window::GetWindowSize(int* outWidth, int* outHeight)
 	{
-		// delta time in seconds
-		s_CurrentFrame = glfwGetTime();
-		s_DeltaTime = s_CurrentFrame - s_LastFrame;
-		s_LastFrame = s_CurrentFrame;
+		glfwGetWindowSize(m_GlfwWindow, outWidth, outHeight);
+	}
+
+	double Window::GetDeltaTime() const
+	{
+		return m_DeltaTime;
 	}
 
 } // namespace Iolive

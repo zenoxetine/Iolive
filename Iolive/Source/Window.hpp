@@ -4,57 +4,48 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
+#include <mutex>
 
 namespace Iolive {
 	class Window {
+	private:
+		inline static Window* s_Window = nullptr; // static window instance
+		inline static std::mutex s_MtxGetInstance;
 	public:
-		Window() = delete;
+		void Destroy();
 
-		static void Create(const char* title, int width, int height);
-		static void Destroy();
+		static Window* Create(const char* title, int width, int height);
+		static Window* Get();
 
 		/*
 		* poll window events
 		* \return bool isWindowShouldClose?
 		*/
-		static bool PollEvents();
-		static void SwapWindow();
-		static void UpdateDeltaTime();
+		bool PollEvents();
+		void SwapWindow();
 
-		static void SetWindowVisible(bool visible);
-		static void SetWindowOpacity(float value);
-		static void SetMaxFPS(float maxFPS) { s_MaxFPS = maxFPS; }
-		
-		/*
-		* Set callback function
-		*/
-		static void SetFrameResizedCallback(void(*callback)(int, int)) { s_OnFrameResizedCallback = callback; }
-		static void SetScrollCallback(void(*callback)(double, double)) { s_OnScrollCallback = callback; }
-		static void SetCursorPosCallback(void(*callback)(bool, double, double)) { s_OnCursorPosCallback = callback; }
+		void SetWindowOpacity(float value);
 
-		static GLFWwindow* GetWindow() { return s_Window; }
-		static void GetWindowSize(int* outWidth, int* outHeight) { glfwGetWindowSize(s_Window, outWidth, outHeight); }
-		static double GetDeltaTime() { return s_DeltaTime; }
+		GLFWwindow* GetGlfwWindow();
+		void GetWindowSize(int* outWidth, int* outHeight);
+		double GetDeltaTime() const;
 
 	private:
-		// glfw callback
-		static void FrameResizedCallback(GLFWwindow* window, int width, int height);
-		static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
-		static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+		Window(const char* title, int width, int height);
+
+	public:
+		// callback without GLFWwindow
+		void(*OnFrameResizedCallback)(int width, int height) = nullptr;
+		void(*OnScrollCallback)(double xoffset, double yoffset) = nullptr;
+		void(*OnCursorPosCallback)(bool pressed, double xpos, double ypos) = nullptr;
+
+		float MaxFPS = 60.0f;
 
 	private:
-		inline static GLFWwindow* s_Window;
+		GLFWwindow* m_GlfwWindow = nullptr;
 
-		inline static float s_MaxFPS = 60.f;
-
-		inline static double s_CurrentFrame = 0.0;
-		inline static double s_LastFrame = 0.0;
-		inline static double s_DeltaTime = 0.02; // in seconds
-
-		// callback
-		inline static void(*s_OnFrameResizedCallback)(int width, int height) = nullptr;
-		inline static void(*s_OnScrollCallback)(double xoffset, double yoffset) = nullptr;
-		inline static void(*s_OnCursorPosCallback)(bool pressed, double xpos, double ypos) = nullptr;
+		double m_CurrentFrame = 0.0;
+		double m_LastFrame = 0.0;
+		double m_DeltaTime = 0.02; // in seconds
 	};
-
 } // namespace Iolive

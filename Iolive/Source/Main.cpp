@@ -1,4 +1,6 @@
+#if IOLIVE_DEBUG == 0
 #include <windows.h>
+#endif
 #include "Application.hpp"
 
 #if IOLIVE_DEBUG == 0

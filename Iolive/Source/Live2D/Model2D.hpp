@@ -4,221 +4,121 @@
 #include <CubismFramework.hpp>
 #include <Model/CubismUserModel.hpp>
 #include <ICubismModelSetting.hpp>
-#include <CubismModelSettingJson.hpp>
 #include <Math/CubismMatrix44.hpp>
 #include <Rendering/CubismRenderer.hpp>
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
-#include <Id/CubismIdManager.hpp>
 #include <Id/CubismId.hpp>
 #include "Utility.hpp"
 #include "Component/TextureManager.hpp"
 #include <string>
-#include <future>
+#include <map>
 
 using namespace Csm;
+
+namespace DefaultParameter {
+	/*
+	* unindexed parameter will be initialized with -1
+	*/
+	struct ParametersIndex {
+		int ParamAngleX = -1;
+		int ParamAngleY = -1;
+		int ParamAngleZ = -1;
+		int ParamBodyAngleX = -1;
+		int ParamBodyAngleY = -1;
+		int ParamBodyAngleZ = -1;
+		int ParamEyeLOpen = -1;
+		int ParamEyeROpen = -1;
+		int ParamEyeLSmile = -1;
+		int ParamEyeRSmile = -1;
+		int ParamEyeForm = -1;
+		int ParamEyeBallX = -1;
+		int ParamEyeBallY = -1;
+		int ParamMouthOpenY = -1;
+		int ParamMouthForm = -1;
+		int ParamBrowLY = -1;
+		int ParamBrowRY = -1;
+		int ParamBrowLForm = -1;
+		int ParamBrowRForm = -1;
+		int ParamBrowLAngle = -1;
+		int ParamBrowRAngle = -1;
+		int ParamBreath = -1;
+	};
+
+	/*
+	* Default parameter value
+	*/
+	struct ParametersValue {
+		float ParamAngleX = 0.0f;
+		float ParamAngleY = 0.0f;
+		float ParamAngleZ = 0.0f;
+		float ParamBodyAngleX = 0.0f;
+		float ParamBodyAngleY = 0.0f;
+		float ParamBodyAngleZ = 0.0f;
+		float ParamEyeLOpen = 1.0f;
+		float ParamEyeROpen = 1.0f;
+		float ParamEyeLSmile = 0.0f;
+		float ParamEyeRSmile = 0.0f;
+		float ParamEyeForm = 0.0f;
+		float ParamEyeBallX = 0.0f;
+		float ParamEyeBallY = 0.0f;
+		float ParamMouthOpenY = 0.0f;
+		float ParamMouthForm = 1.0f;
+		float ParamBrowLY = 0.0f;
+		float ParamBrowRY = 0.0f;
+		float ParamBrowLForm = 0.0f;
+		float ParamBrowRForm = 0.0f;
+		float ParamBrowLAngle = 0.0f;
+		float ParamBrowRAngle = 0.0f;
+		float ParamBreath = 0.0f;
+	};
+}
+
+typedef std::map<int, float*> ParameterBinding;
 
 class Model2D : public CubismUserModel
 {
 public:
-	Model2D(ICubismModelSetting* modelSetting, const wchar_t* modelDir, const wchar_t* modelFilename)
-	  : m_ModelSetting(nullptr),
-		m_ProjectionMatrix(CubismMatrix44()),
-		m_ModelDir(modelDir),
-		m_ModelFileName(modelFilename)
-	{
-		_initialized = false;
+	Model2D(ICubismModelSetting* modelSetting, const wchar_t* modelDir, const wchar_t* modelFilename);
+	~Model2D();
 
-		if (SetupModelSetting(modelSetting))
-		{
-			_initialized = true;
-		}
-	}
-
-	~Model2D()
-	{
-		if (m_ModelSetting != nullptr)
-			delete m_ModelSetting;
-	}
-
-	void OnUpdate(float deltaTime)
-	{
-		if (!_initialized || _model == NULL) return;
-
-		// load saved parameter
-		_model->LoadParameters();
-
-		if (_breath)
-		{
-			_breath->UpdateParameters(_model, deltaTime);
-		}
-
-		if (_pose)
-		{
-			_pose->UpdateParameters(_model, deltaTime);
-		}
-
-		if (_physics)
-		{
-			_physics->Evaluate(_model, deltaTime);
-		}
-
-		_model->Update();
-	}
-
-	void OnDraw()
-	{
-		if (!_initialized || _model == NULL) return;
-
-		GetProjectionMatrix()->MultiplyByMatrix(_modelMatrix);
-
-		GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->SetMvpMatrix(GetProjectionMatrix());
-		GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->DrawModel();
-	}
-
-public:
-	CubismMatrix44* GetProjectionMatrix()
-	{
-		return &m_ProjectionMatrix;
-	}
+	void OnUpdate(float deltaTime);
+	void OnDraw(int width, int height);
 
 private:
-	bool SetupModelSetting(ICubismModelSetting* modelSetting)
-	{
-		_updating = true;
+	bool SetupModelSetting(ICubismModelSetting* modelSetting);
+	void SetupIndexOfDefaultParameters();
+	void SetupModelUtils();
 
-		// set modeSetting as class member
-		m_ModelSetting = modelSetting;
+	void UpdateBindedParameters();
 
-		std::future<bool> loadModel = std::async(std::launch::async, [this]() -> bool {
-			// load .moc3
-			wchar_t* moc3Filename = Utility::NewWideChar(m_ModelSetting->GetModelFileName());
-			auto [buffer, fileSize] = Utility::CreateBufferFromFile((m_ModelDir + moc3Filename).data());
-			delete[] moc3Filename;
-			if (buffer)
-			{
-				LoadModel(reinterpret_cast<csmByte*>(buffer), fileSize);
-				delete[] buffer;
-				return true;
-			}
-			return false;
-		});
+public:
+	// <ParameterName, value>
+	std::map<const char*, float> GetParameterMap();
 
-		std::future<bool> loadPhysics = std::async(std::launch::async, [this]() -> bool {
-			// load physics
-			if (strlen(m_ModelSetting->GetPhysicsFileName()) > 0)
-			{
-				wchar_t* physicsFilename = Utility::NewWideChar(m_ModelSetting->GetPhysicsFileName());
-				auto [buffer, fileSize] = Utility::CreateBufferFromFile((m_ModelDir + physicsFilename).data());
-				delete[] physicsFilename;
-				if (buffer)
-				{
-					LoadPhysics(reinterpret_cast<csmByte*>(buffer), fileSize);
-					delete[] buffer;
-					return true;
-				}
-			}
-			return false;
-		});
+	// [Index] => <Min, Max>
+	std::vector<std::array<float, 2>> GetParameterMinMax();
 
-		std::future<bool> loadPose = std::async(std::launch::async, [this]() -> bool {
-			// Load pose
-			if (strlen(m_ModelSetting->GetPoseFileName()) > 0)
-			{
-				wchar_t* poseFilename = Utility::NewWideChar(m_ModelSetting->GetPoseFileName());
-				auto [buffer, fileSize] = Utility::CreateBufferFromFile((m_ModelDir + poseFilename).data());
-				delete[] poseFilename;
-				if (buffer)
-				{
-					LoadPose(reinterpret_cast<csmByte*>(buffer), fileSize);
-					delete[] buffer;
-					return true;
-				}
-			}
-			return false;
-		});
+	ParameterBinding& GetBindedParameter();
+	DefaultParameter::ParametersIndex& GetParameterIndex();
 
-		// load the texture
-		bool textureErrFlags = false;
-		for (csmInt32 modelTexCount = 0; modelTexCount < m_ModelSetting->GetTextureCount(); modelTexCount++)
-		{
-			wchar_t* textureFilename = Utility::NewWideChar(m_ModelSetting->GetTextureFileName(modelTexCount));
-			if (wcslen(textureFilename) == 0)
-			{
-				delete[] textureFilename;
-				continue;
-			}
+	int GetParameterCount() const;
 
-			std::wstring texturePath = m_ModelDir + textureFilename;
-			delete[] textureFilename;
+	void SetParameterBinding(const ParameterBinding& parameterBinding);
+	void SetParameterBindingAt(int index, float* ptrValue);
 
-			if (!m_TextureManager.CreateTextureFromPngFile(texturePath.data()))
-			{
-				// some texture file may not found
-				textureErrFlags = true;
-				// breaakk, because the model will not showing or looks weird
-				break;
-			}
-		}
+	void SetModelScale(float scaleValue);
+	void SetModelTranslateX(float translateValue);
+	void SetModelTranslateY(float translateValue);
+	
+	void AddModelScale(float scaleValue);
+	void AddModelTranslateX(float translateValue);
+	void AddModelTranslateY(float translateValue);
 
-		// wait until .moc3 loaded
-		if (loadModel.get() != true || !_moc)
-		{
-			// error while loading .moc3
-			CubismFramework::CoreLogFunction("[Model2D][E] Error while loading .moc3 file\n");
-			return false;
-		}
+	float GetModelScale() const;
+	float GetModelTranslateX() const;
+	float GetModelTranslateY() const;
 
-		if (textureErrFlags)
-		{
-			CubismFramework::CoreLogFunction("[Model2D][E] Error while loading texture file\n");
-			return false;
-		}
-
-		SetupModelParameters();
-
-		// create renderer first
-		CreateRenderer();
-
-		// then bind texture into model
-		for (csmInt32 modelTexCount = 0; modelTexCount < m_ModelSetting->GetTextureCount(); modelTexCount++)
-		{
-			const GLuint textureId = m_TextureManager.GetTextureAt(modelTexCount);
-			GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->BindTexture(modelTexCount, textureId);
-		}
-		GetRenderer<Rendering::CubismRenderer_OpenGLES2>()->IsPremultipliedAlpha(false);
-
-		csmMap<csmString, csmFloat32> modelLayout;
-		m_ModelSetting->GetLayoutMap(modelLayout);
-		_modelMatrix->SetupFromLayout(modelLayout);
-
-		loadPhysics.wait();
-		loadPose.wait();
-
-		_updating = false;
-
-		return true;
-	}
-
-	void SetupModelParameters()
-	{
-		CubismIdHandle idParamBreath = NULL;
-		
-		csmVector<CubismIdHandle> _ids = GetModel()->GetParameterIdHandles();
-		for (csmUint32 i = 0; i < _ids.GetSize(); ++i)
-		{
-			csmString Id = _ids[i]->GetString();
-			if (Id == "ParamBreath" || Id == "PARAM_BREATH") { idParamBreath = _ids[i]; break; }
-		}
-
-		// Setup breath
-		_breath = CubismBreath::Create();
-		csmVector<CubismBreath::BreathParameterData> breathParameters;
-		if (idParamBreath != NULL)
-			breathParameters.PushBack(CubismBreath::BreathParameterData(idParamBreath, 0.5f, 0.5f, 3.8f, 0.5f));
-
-		// Set breath data
-		_breath->SetParameters(breathParameters);
-	}
+	CubismMatrix44* GetProjectionMatrix();
 
 private:
 	std::wstring m_ModelDir;       // absolute model path
@@ -226,7 +126,13 @@ private:
 
 	ICubismModelSetting* m_ModelSetting;
 	TextureManager m_TextureManager;
+
 	CubismMatrix44 m_ProjectionMatrix;
 
-	csmVector<CubismIdHandle> m_EyeBlinkIds;
+	ParameterBinding m_ParameterBinding;
+	DefaultParameter::ParametersIndex m_IndexOfDefaultParameter;
+
+	float m_ModelScale;
+	float m_ModelTranslateX;
+	float m_ModelTranslateY;
 };

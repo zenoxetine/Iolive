@@ -49,29 +49,27 @@ PRIVATE
 	Source/Main.cpp
 	Source/Application.cpp
 	Source/Window.cpp
+	Source/MainGui.cpp
+	Source/Utility/DeviceEnumerator.cpp
 	Source/Live2D/Live2DManager.cpp
+	Source/Live2D/Model2D.cpp
 	Source/Live2D/Utility.cpp
 	Source/Live2D/Component/TextureManager.cpp
-	Source/GUI/IoliveGui.cpp
-	Source/GUI/Utility.cpp
 
 	# header files
 	Source/Application.hpp
 	Source/Window.hpp
-	Source/IofaceBridge.hpp
-	Source/ParameterBridge.hpp
-	Source/MathUtils.hpp
-	Source/Logger.hpp
+	Source/MainGui.hpp
+	Source/GUIComponent/Checkbox.hpp
+	Source/Utility/MathUtils.hpp
+	Source/Utility/Logger.hpp
+	Source/Utility/WindowsAPI.hpp
+	Source/Utility/DeviceEnumerator.h
 	Source/Live2D/Live2DManager.hpp
 	Source/Live2D/Model2D.hpp
 	Source/Live2D/Utility.hpp
 	Source/Live2D/Component/TextureManager.hpp
 	Source/Live2D/CubismSamples/LAppAllocator.hpp
-	Source/GUI/IoliveGui.hpp
-	Source/GUI/Utility.hpp
-	Source/GUI/Widget/MainWidget.hpp
-	Source/GUI/Widget/ParameterGui.hpp
-	Source/GUI/Widget/Component/Checkbox.hpp
 
 	# ImGui file
 	${IMGUI_SOURCES}

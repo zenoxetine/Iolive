@@ -18,6 +18,8 @@ public:
 	Ioface();
 	~Ioface();
 
+	void Init();
+
 	/*
 	* Open camera
 	* return true when success
@@ -34,13 +36,18 @@ public:
 	void UpdateAll();
 
 	void ShowFrame();
-	void DrawPose(float lineL);
 	void CloseAllFrame();
+
+	void SetLogFunction(void(*fpLog)(const char*, ...)) { if (fpLog) m_LogFunc = fpLog; }
+	void PrintIofaceStatus();
 
 private:
 	void UpdateFrame();
 	void UpdateParameters();
 	void DoUpdateParameters();
+	
+	void DrawPose(float lineL);
+	void DrawLandmarks(cv::Mat& frame);
 
 	std::optional<cv::Rect> DetectFirstFace(const cv::Mat& image);
 	void EstimateHeadPose(const INTRAFACE::HeadPose& headPose);
@@ -63,6 +70,7 @@ public:
 
 private:
 	bool m_Initialized;
+
 	cv::VideoCapture m_Cap;
 	cv::Mat m_Frame;
 	
@@ -73,5 +81,12 @@ private:
 	INTRAFACE::HeadPose m_HeadPose;
 
 	cv::Mat m_Landmarks; // 49 facial landmarks
+
+	// log function
+	void(*m_LogFunc)(const char*, ...) = [](const char*, ...) { };
+
+	// flags
 	bool m_IsDetected;
+	bool m_DoDisplayErrors;
+	bool m_WaitingFaceHasPrinted;
 };

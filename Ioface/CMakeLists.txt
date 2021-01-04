@@ -11,14 +11,14 @@ else()
 	add_definitions(-DIOFACE_DEBUG=0)
 endif()
 
-set(OPENCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/opencv-3.0.0)
+set(OPENCV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/opencv-3.2.0)
 set(OPENCV_LIBRARIES
-	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_highgui300${dFLAGS}.lib
-	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_objdetect300${dFLAGS}.lib
-	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_core300${dFLAGS}.lib
-	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_imgproc300${dFLAGS}.lib
-	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_videoio300${dFLAGS}.lib
-	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_calib3d300${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_highgui320${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_objdetect320${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_core320${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_imgproc320${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_videoio320${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_calib3d320${dFLAGS}.lib
 )
 
 target_sources(Ioface
