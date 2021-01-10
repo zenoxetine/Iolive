@@ -28,8 +28,8 @@ Model2D* Live2DManager::CreateModel(const wchar_t* modelJson)
 {
 	// load .model3.json
 	auto [buffer, fileSize] = Utility::CreateBufferFromFile(modelJson);
-	if (!buffer) return false;
-	ICubismModelSetting* modelSetting = new CubismModelSettingJson(reinterpret_cast<csmByte*>(buffer), fileSize);
+	if (!buffer) return nullptr;
+	ICubismModelSetting* modelSetting = new CubismModelSettingJson(buffer, fileSize);
 	delete[] buffer;
 
 	// check model setting (.model3.json)
@@ -37,17 +37,17 @@ Model2D* Live2DManager::CreateModel(const wchar_t* modelJson)
 	if (!jsonOK)
 	{
 		delete modelSetting;
-		return false;
+		return nullptr;
 	}
 
-	// get model absolute dir & filename
+	// get absolute model dir & filename
 	std::filesystem::path modelPath = modelJson;
 	std::wstring modelDir = modelPath.parent_path().wstring() + L'/'; // c:\\a\\b/c, it's okay
 	std::wstring modelFilename = modelPath.filename().wstring();
 
 	// create new model!
 	LoggingFunction("[Live2DManager][I] Creating new model ...\n");
-	Model2D* newModel = new Model2D(modelSetting, modelDir.data(), modelFilename.data());
+	Model2D* newModel = new Model2D(modelSetting, modelDir, modelFilename);
 	if (newModel->IsInitialized())
 	{
 		LoggingFunction("[Live2DManager][I] New Model initialized\n\n");
@@ -64,11 +64,10 @@ Model2D* Live2DManager::CreateModel(const wchar_t* modelJson)
 
 bool Live2DManager::CheckModelSetting(ICubismModelSetting* modelSetting)
 {
-	// check .moc3 file
 	const char* mocFilename = modelSetting->GetModelFileName();
 	if (strlen(mocFilename) == 0)
 	{
-		LoggingFunction("[Live2DManager][E] Can't found .moc3 from the json file\n\n");
+		LoggingFunction("[Live2DManager][E] Can't found .moc3 path from the json file\n\n");
 		return false;
 	}
 

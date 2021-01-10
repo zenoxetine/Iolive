@@ -61,10 +61,12 @@ PRIVATE
 	Source/Window.hpp
 	Source/MainGui.hpp
 	Source/GUIComponent/Checkbox.hpp
+	Source/GUIComponent/Hotkeys.hpp
 	Source/Utility/MathUtils.hpp
 	Source/Utility/Logger.hpp
 	Source/Utility/WindowsAPI.hpp
 	Source/Utility/DeviceEnumerator.h
+	Source/Utility/JsonManager.hpp
 	Source/Live2D/Live2DManager.hpp
 	Source/Live2D/Model2D.hpp
 	Source/Live2D/Utility.hpp
@@ -79,8 +81,9 @@ target_include_directories(Iolive
 PRIVATE
 	${OPENGL_INCLUDE_DIRS}
 	${IOFACE_INCLUDE_DIR}
-	${IOLIVE_VENDOR_PATH}/stb/ # header only file
+	${IOLIVE_VENDOR_PATH}/stb/
 	${IOLIVE_VENDOR_PATH}/imgui/
+	${IOLIVE_VENDOR_PATH}/rapidjson/include
 )
 
 target_link_libraries(Iolive

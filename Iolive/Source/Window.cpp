@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <thread>
 #include <chrono>
+#include <iostream>
 
 namespace Iolive {
 	Window* Window::Create(const char* title, int width, int height)
@@ -77,9 +78,6 @@ namespace Iolive {
 
 	void Window::SwapWindow()
 	{
-		// swap window buffers
-		glfwSwapBuffers(m_GlfwWindow);
-
 		// update delta time
 		m_CurrentFrame = glfwGetTime();
 		m_DeltaTime = m_CurrentFrame - m_LastFrame;
@@ -88,7 +86,10 @@ namespace Iolive {
 		// cap fps
 		long msToSleep = (1000.0 / MaxFPS) - (m_DeltaTime * 100.0);
 		if (msToSleep > 0.0)
-			std::this_thread::sleep_for(std::chrono::milliseconds(msToSleep));
+			std::this_thread::sleep_for(std::chrono::milliseconds(msToSleep - 1));
+
+		// swap window buffers
+		glfwSwapBuffers(m_GlfwWindow);
 	}
 
 	/* * * * * * * * *

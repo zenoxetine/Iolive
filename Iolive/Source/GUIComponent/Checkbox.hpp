@@ -6,7 +6,7 @@
 struct Checkbox
 {
 public:
-	inline static std::mutex getterGuard;
+	inline static std::mutex s_GetterGuard;
 	Checkbox(const char* name, bool checked = false)
 	  :	m_Name(name), m_Checked(checked) {}
 	
@@ -24,10 +24,12 @@ public:
 
 	// getter & setter
 	bool IsChecked() const {
-		std::lock_guard<std::mutex> lock(getterGuard);
+		std::lock_guard<std::mutex> lock(s_GetterGuard);
 		return m_Checked;
 	}
 	void SetChecked(bool checked) { m_Checked = checked; }
+
+	bool* GetPtrChecked() { return &m_Checked; }
 
 private:
 	const char* m_Name;

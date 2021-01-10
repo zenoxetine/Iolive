@@ -1,9 +1,10 @@
 #pragma once
 
 #include <windows.h>
+#include <shellapi.h>
 #include <string>
 
-namespace Iolive { namespace WindowsAPI {
+namespace WindowsAPI {
 	/*
 	* Get the horizontal and vertical screen sizes in pixel
 	*/
@@ -63,5 +64,9 @@ namespace Iolive { namespace WindowsAPI {
 
 		return filePathWStr;
 	}
+
+	static void OpenUrlInBrowser(const char* url)
+	{
+		ShellExecute(0, 0, url, 0, 0, SW_SHOW);
+	}
 } // namespace WindowsAPI
-} // namespace Iolive

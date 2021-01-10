@@ -1,7 +1,6 @@
 #include "MainGui.hpp"
 #include "Utility/WindowsAPI.hpp"
 #include "Live2D/Live2DManager.hpp"
-
 #include <string>
 
 namespace Iolive {
@@ -11,7 +10,7 @@ namespace Iolive {
 		ImGui::CreateContext();
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
+		// io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
 		io.ConfigViewportsNoAutoMerge = true; // fly... me to the moon~
 		io.IniFilename = NULL; // don't create file .ini
@@ -32,16 +31,6 @@ namespace Iolive {
 		// make a good imgui style here
 		ImGuiStyle& style = ImGui::GetStyle();
 
-		struct ImVec3 { float x, y, z; ImVec3(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f) { x = _x; y = _y; z = _z; } };
-
-		ImVec3 color_for_text = ImVec3(29.f / 255.f, 39.f / 255.f, 53.f / 255.f);
-		ImVec3 color_for_head = ImVec3(245.f / 255.f, 144.f / 255.f, 158.f / 255.f);
-		ImVec3 color_for_area = ImVec3(245.f / 255.f, 225.f / 255.f, 225.f / 255.f);
-		ImVec3 color_for_body = ImVec3(254.f / 255.f, 254.f / 255.f, 254.f / 255.f);
-		ImVec3 color_for_tab = ImVec3(198.f / 255.f, 235.f / 255.f, 105.f / 255.f);
-		ImVec3 color_for_button = color_for_head;
-		ImVec3 color_for_slider = ImVec3(230.f / 255.f, 120.f / 255.f, 120.f / 255.f);
-
 		// Check marks
 		style.Colors[ImGuiCol_CheckMark] = ImVec4(0.05f, 0.80f, 0.05f, 1.0f);
 
@@ -61,11 +50,8 @@ namespace Iolive {
 		style.Colors[ImGuiCol_FrameBgActive] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.86f);
 
 		// Window header
-		style.Colors[ImGuiCol_TitleBg] = ImVec4(color_for_area.x, color_for_area.y, color_for_area.z, 1.00f);
-		style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(color_for_area.x, color_for_area.y, color_for_area.z, 0.75f);
 		style.Colors[ImGuiCol_TitleBgActive] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 1.00f);
-		style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.73f);
-		
+
 		// ImGui component header
 		style.Colors[ImGuiCol_Header] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.76f);
 		style.Colors[ImGuiCol_HeaderHovered] = ImVec4(color_for_head.x, color_for_head.y, color_for_head.z, 0.86f);
@@ -109,7 +95,7 @@ namespace Iolive {
 
 	MainGui& MainGui::Get()
 	{
-		std::lock_guard<std::mutex> lock(mtxGetGuiInstance);
+		std::lock_guard<std::mutex> lock(s_MtxGetGuiInstance);
 		static MainGui s_MainGui;
 		return s_MainGui;
 	}
@@ -121,7 +107,7 @@ namespace Iolive {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 	}
-	
+
 	void MainGui::EndImGuiFrame()
 	{
 		// rendering
@@ -146,134 +132,157 @@ namespace Iolive {
 		ImGuiIO& io = ImGui::GetIO();
 		io.DisplaySize = ImVec2(width, height);
 
-		ImGui::SetNextWindowSize(ImVec2(320, io.DisplaySize.y), ImGuiCond_Once);
+		ImGui::SetNextWindowSize(ImVec2(320, 500), ImGuiCond_Once);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(250, 400));
 		{
 			ImGui::Begin("Main Iolive GUI");
 			ImVec2 widgetSize = ImGui::GetWindowSize();
 
-			if (ImGui::BeginTabBar("Main TabBar", ImGuiTabBarFlags_None))
+			if (ImGui::BeginTabBar("##MainTabBar", ImGuiTabBarFlags_None))
 			{
-				// Common tab
-				if (ImGui::BeginTabItem("Common"))
+				/*
+				* Model tab
+				*/
+				if (ImGui::BeginTabItem("Model"))
 				{
-					// Face Capture
-					if (ImGui::CollapsingHeader("Face Capture", ImGuiTreeNodeFlags_DefaultOpen))
+					// [Button] Open model
+					ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 16.f);
+					if (ImGui::Button(app->m_UserModel.IsModelInitialized() ? "Change Model" : "Open Model", ImVec2(widgetSize.x - 30, 32)))
 					{
-						/*
-						* List of camera devices
-						*/
-						static bool firstTime = true;
-						if (firstTime)
-						{
-							// first time, get devices map
-							CameraDevicesMap = DeviceEnumerator.getVideoDevicesMap();
-							firstTime = false;
-						}
+						// Open new model
+						std::wstring filePath = WindowsAPI::WOpenFileDialog(
+							L"Live2D JSON File (*.model3.json)\000*.model3.json\000",
+							glfwGetWin32Window(app->m_Window->GetGlfwWindow())
+						);
 
-						if (Checkbox_FaceCapture.IsChecked())
+						if (filePath.size() > 0) // file selected
 						{
-							// Disable when face capture is active
-							ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-							ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.55f);
-						}
-						if (ImGui::BeginCombo("##CameraDevices", CameraDevicesMap[SelectedCameraId].deviceName.c_str()))
-						{
-							CameraDevicesMap = DeviceEnumerator.getVideoDevicesMap(); // update device map
-							for (int i = 0; i < CameraDevicesMap.size(); i++)
-							{
-								bool isSelected = (SelectedCameraId == CameraDevicesMap[i].id);
-								if (ImGui::Selectable(CameraDevicesMap[i].deviceName.c_str(), isSelected))
-								{
-									// selected by user
-									SelectedCameraId = CameraDevicesMap[i].id;
-									if (isSelected)
-										ImGui::SetItemDefaultFocus();
-								}
-							}
-							ImGui::EndCombo();
-						}
-						if (Checkbox_FaceCapture.IsChecked())
-						{
-							ImGui::PopItemFlag();
-							ImGui::PopStyleVar();
-						}
-
-						// Checkbox enable face capture
-						if (Checkbox_FaceCapture.Draw())
-						{
-							if (Checkbox_FaceCapture.IsChecked())
-							{
-								if (!app->OpenCamera())
-									Checkbox_FaceCapture.SetChecked(false);
-							}
-							else
-							{
-								app->CloseCamera();
-								Checkbox_ShowFrame.SetChecked(false); // next time, don't automatically showing the frame!
-							}
-						}
-
-						if (Checkbox_FaceCapture.IsChecked())
-						{
-							ImGui::Spacing(); ImGui::SameLine();
-							Checkbox_ShowFrame.Draw(); // Checkbox show frame
-
-							ImGui::Spacing(); ImGui::SameLine();
-							Checkbox_EqualizeEyes.Draw(); // Checkbox equalize eye parameter
+							// delete previous model
+							app->m_UserModel.DeleteModel();
 							
-							ImGui::Spacing(); ImGui::SameLine();
-							Checkbox_EyeballFollowCursor.Draw(); // Checkbox eye ball follow cursor
+							// clear ParameterGUI
+							ParameterGUI.UnsetModel();
+
+							// clear hotkeys
+							MainGui::Get().GuiHotkeys.ClearAll();
+
+							Model2D* newModel = Live2DManager::CreateModel(filePath.data());
+							if (newModel)
+							{
+								// success create model
+								app->SetModel(newModel);
+							}
+						}
+					}
+					ImGui::PopStyleVar(); // End button style var
+
+					if (app->m_UserModel.IsModelInitialized())
+					{
+						Checkbox_ShowModelHotkeys.Draw();
+
+						if (ImGui::CollapsingHeader("Parameters"))
+						{
+							// Parameter Scene
+							ParameterGUI.Draw();
 						}
 					}
 
-					// Live2D Model
-					if (ImGui::CollapsingHeader("Model", ImGuiTreeNodeFlags_DefaultOpen))
+					ImGui::EndTabItem();
+				}
+
+				/*
+				* Face capture tab
+				*/
+				if (ImGui::BeginTabItem("Face Capture"))
+				{
+					/*
+					* List of camera devices
+					*/
+					static bool firstTime = true;
+					if (firstTime)
 					{
-						// [Button] Open model
-						ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 16.f);
-						if (ImGui::Button(app->m_UserModel.IsModelInitialized() ? "Change Model" : "Open Model", ImVec2(widgetSize.x - 32, 32)))
+						// first time, get devices map
+						CameraDevicesMap = DeviceEnumerator.getVideoDevicesMap();
+						firstTime = false;
+					}
+
+					if (Checkbox_FaceCapture.IsChecked())
+					{
+						// Disable when face capture is active
+						ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+						ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.55f);
+					}
+					if (ImGui::BeginCombo("##CameraDevices", CameraDevicesMap[SelectedCameraId].deviceName.c_str()))
+					{
+						CameraDevicesMap = DeviceEnumerator.getVideoDevicesMap(); // update device map
+						for (int i = 0; i < CameraDevicesMap.size(); i++)
 						{
-							// Open new model
-							std::wstring filePath = WindowsAPI::WOpenFileDialog(
-								L"Live2D JSON File (*.model3.json)\000*.model3.json\000",
-								glfwGetWin32Window(app->m_Window->GetGlfwWindow())
-							);
-
-							if (filePath.size() > 0) // file selected
+							bool isSelected = (SelectedCameraId == CameraDevicesMap[i].id);
+							if (ImGui::Selectable(CameraDevicesMap[i].deviceName.c_str(), isSelected))
 							{
-								app->m_UserModel.DeleteModel();
-								ParameterGUI.UnsetModel();
-
-								Model2D* newModel = Live2DManager::CreateModel(filePath.data());
-								if (newModel)
-								{
-									// success create model
-									app->m_UserModel.SetModel(newModel);
-									
-									// give model parameter information to ParameterGUI
-									Model2D* model = app->m_UserModel.GetModel2D();
-									ParameterGUI.SetModel(model);
-									
-									// set parameter binding between gui and live2d model
-									for (size_t paramIndex = 0; paramIndex < ParameterGUI.GetParameterSize(); paramIndex++)
-									{
-										model->SetParameterBindingAt(paramIndex, ParameterGUI.GetPtrValueByIndex(paramIndex));
-									}
-
-									if (app->m_Ioface.IsCameraOpened())
-									{
-										// there's a new model and camera opened
-										// but model parameter wasn't binded with face capture. Bind it now
-										app->BindDefaultParametersWithFace();
-									}
-								}
+								// selected by user
+								SelectedCameraId = CameraDevicesMap[i].id;
+								if (isSelected)
+									ImGui::SetItemDefaultFocus();
 							}
 						}
+						ImGui::EndCombo();
+					}
+					if (Checkbox_FaceCapture.IsChecked())
+					{
+						ImGui::PopItemFlag();
 						ImGui::PopStyleVar();
+					}
+					// End list of camera devices
 
-						// Parameter Scene
-						ParameterGUI.Draw();
+					// Checkbox enable face capture
+					if (Checkbox_FaceCapture.Draw())
+					{
+						if (Checkbox_FaceCapture.IsChecked())
+						{
+							if (!app->OpenCamera())
+								Checkbox_FaceCapture.SetChecked(false);
+						}
+						else
+						{
+							app->CloseCamera();
+
+							// next time, don't automatically showing the frame!
+							Checkbox_ShowFrame.SetChecked(false);
+							Checkbox_ShowFace.SetChecked(false);
+						}
+					}
+
+					if (Checkbox_FaceCapture.IsChecked())
+					{
+						ImGui::Spacing(); ImGui::SameLine();
+						ImGui::PushItemWidth(ImGui::GetWindowSize().x / 2.25);
+						ImGui::SliderInt("Tracking delay", &(app->m_Ioface.TrackingDelay), 0, 40,
+							app->m_Ioface.TrackingDelay == 0 ? "No delay" : "%dms"
+						);
+						ImGui::PopItemWidth();
+
+						ImGui::Spacing(); ImGui::SameLine();
+						if (Checkbox_ShowFrame.Draw())
+						{
+							if (!Checkbox_ShowFrame.IsChecked())
+							{
+								Checkbox_ShowFace.SetChecked(false);
+							}
+						}
+
+						if (Checkbox_ShowFrame.IsChecked())
+						{
+							ImGui::Spacing(); ImGui::SameLine();
+							ImGui::Spacing(); ImGui::SameLine();
+							Checkbox_ShowFace.Draw();
+						}
+
+						ImGui::Spacing(); ImGui::SameLine();
+						Checkbox_EqualizeEyes.Draw(); // Checkbox equalize eye parameter
+
+						ImGui::Spacing(); ImGui::SameLine();
+						Checkbox_EyeballFollowCursor.Draw(); // Checkbox eye ball follow cursor
 					}
 
 					ImGui::EndTabItem();
@@ -286,7 +295,7 @@ namespace Iolive {
 				{
 					ImGui::PushItemWidth(ImGui::GetWindowSize().x / 2.25);
 					ImGui::ColorEdit3("Clear Color", ColorEdit_ClearColor, ImGuiColorEditFlags_DisplayRGB);
-					
+
 					if (Checkbox_WindowVisible.Draw())
 					{
 						if (Checkbox_WindowVisible.IsChecked())
@@ -294,8 +303,8 @@ namespace Iolive {
 						else
 							app->m_Window->SetWindowOpacity(0.0f);
 					}
-					
-					ImGui::SliderFloat("Max FPS (not accurate)", &(app->m_Window->MaxFPS), 15.0f, 100.0f, "%.0f");
+
+					ImGui::SliderFloat("Max FPS (not accurate)", &(app->m_Window->MaxFPS), 20.0f, 90.0f, "%.0f");
 					ImGui::PopItemWidth();
 
 					ImGui::Text("Estimated FPS: %.0f", io.Framerate);
@@ -315,13 +324,114 @@ namespace Iolive {
 					ImGui::EndTabItem();
 				}
 
+				/*
+				* About tab
+				*/
+				if (ImGui::BeginTabItem("About"))
+				{
+					ImGui::Text("> Iolive version %s.%s", IOLIVE_MAJOR_VERSION_STR, IOLIVE_MINOR_VERSION_STR);
+					ImGui::Text("> See the project on"); ImGui::SameLine();
+					ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f);
+					if (ImGui::Button("Github"))
+					{
+						WindowsAPI::OpenUrlInBrowser(IOLIVE_GITHUB);
+					}
+					ImGui::PopStyleVar();
+
+					ImGui::EndTabItem();
+				}
+
 				ImGui::EndTabBar();
+
 			}
 			ImGui::End();
 		}
-		ImGui::PopStyleVar();
+		ImGui::PopStyleVar(); // ImGuiStyleVar_WindowMinSize
 
+		if (app->m_UserModel.IsModelInitialized())
+		{
+			if (Checkbox_ShowModelHotkeys.IsChecked())
+			{
+				ShowModelHotkeys(app);
+
+				if (doEditHotkeys > -1)
+				{
+					static auto HotkeysEditCallback = [](int index, ModelMotion* motion) {
+						if (index > -1 && motion != nullptr) // saved
+						{
+							MainGui::Get().OnHotkeysSaved(index, motion);
+						}
+
+						MainGui::Get().doEditHotkeys = -1;
+					};
+
+					GuiHotkeys.DrawGuiEdit(doEditHotkeys, HotkeysEditCallback);
+				}
+			}
+			else
+			{
+				doEditHotkeys = -1;
+			}
+		}
 		EndImGuiFrame();
+	}
+
+	void MainGui::ShowModelHotkeys(Application* app)
+	{
+		ImGui::SetNextWindowSize(ImVec2(500, 320), ImGuiCond_Once);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(350, 224));
+		{
+			ImGui::Begin("Model Hotkeys", Checkbox_ShowModelHotkeys.GetPtrChecked());
+
+			if (GuiHotkeys.Size() == 0)
+			{
+				float font_size = ImGui::GetFontSize() * 25 / 2;
+				ImGui::SameLine( ImGui::GetWindowSize().x / 2 - font_size + (font_size / 2));
+				ImGui::Text("Didn't see any motion/expression.");
+			}
+			else
+			{
+				ImGui::TextWrapped(" * Hotkeys cannot be activated globally/outside of Iolive window");
+
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.f);
+				if (ImGui::Button("Reset All To Default", ImVec2(180, 28)))
+				{
+					app->CreateNewHotkeys((app->m_UserModel.GetModel2D()->GetModelDir() + kSettingsFileName).c_str());
+				}
+				ImGui::PopStyleVar();
+				ImGui::NewLine();
+
+				for (int i = 0; i < GuiHotkeys.Size(); i++)
+				{
+					auto item = GuiHotkeys.GetItemAtIndex(i);
+					if (item != nullptr)
+					{
+						ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.f);
+						if (ImGui::Button(item->name, ImVec2(0, 26)))
+						{
+							// draw edit hotkeys
+							doEditHotkeys = i;
+						}
+						ImGui::PopStyleVar();
+
+						HotkeyItem& hotkeyItem = GuiHotkeys.GetHotkeysAtIndex(i);
+						GuiHotkeys.DrawHotkeyItem(hotkeyItem);
+					}
+
+					ImGui::NewLine();
+				}
+			}
+			ImGui::End();
+		}
+		ImGui::PopStyleVar(); // Window min size
+	}
+
+	/*
+	* A bridge for calling private function in Application
+	*/
+	void MainGui::OnHotkeysSaved(int index, ModelMotion* motion)
+	{
+		Application::Get()->OnHotkeysSaved(index, motion);
 	}
 
 	/*

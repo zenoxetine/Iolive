@@ -7,10 +7,17 @@
 #include <Math/CubismMatrix44.hpp>
 #include <Rendering/CubismRenderer.hpp>
 #include <Rendering/OpenGL/CubismRenderer_OpenGLES2.hpp>
+#include <Motion/ACubismMotion.hpp>
+#include <Motion/CubismMotion.hpp>
+#include <Motion/CubismMotionQueueEntry.hpp>
+#include <Motion/CubismMotionQueueManager.hpp>
 #include <Id/CubismId.hpp>
+#include <Type/csmVector.hpp>
 #include "Utility.hpp"
 #include "Component/TextureManager.hpp"
 #include <string>
+#include <vector>
+#include <array>
 #include <map>
 
 using namespace Csm;
@@ -73,16 +80,35 @@ namespace DefaultParameter {
 	};
 }
 
+struct ModelMotion
+{
+public:
+	enum class MotionType { Motion = 0, Expression };
+
+public:
+	ModelMotion(int _id, const char* _name, ACubismMotion* _motion, MotionType _motionType)
+		: id(_id), name(_name), motion(_motion), motionType(_motionType)
+	{}
+
+	const char* name;
+	ACubismMotion* motion;
+	MotionType motionType;
+	int id;
+};
+
 typedef std::map<int, float*> ParameterBinding;
 
 class Model2D : public CubismUserModel
 {
 public:
-	Model2D(ICubismModelSetting* modelSetting, const wchar_t* modelDir, const wchar_t* modelFilename);
+	Model2D(ICubismModelSetting* modelSetting, const std::wstring& modelDir, const std::wstring& modelFilename);
 	~Model2D();
 
 	void OnUpdate(float deltaTime);
 	void OnDraw(int width, int height);
+
+	void StartMotion(ModelMotion* motion);
+	void ResetAllMotions();
 
 private:
 	bool SetupModelSetting(ICubismModelSetting* modelSetting);
@@ -90,6 +116,9 @@ private:
 	void SetupModelUtils();
 
 	void UpdateBindedParameters();
+
+	void DoStartExpression(ACubismMotion* motion);
+	void DoStartMotion(ACubismMotion* motion);
 
 public:
 	// <ParameterName, value>
@@ -100,6 +129,9 @@ public:
 
 	ParameterBinding& GetBindedParameter();
 	DefaultParameter::ParametersIndex& GetParameterIndex();
+
+	std::vector<ModelMotion>& GetExpressions();
+	std::vector<ModelMotion>& GetMotions();
 
 	int GetParameterCount() const;
 
@@ -120,6 +152,9 @@ public:
 
 	CubismMatrix44* GetProjectionMatrix();
 
+	const std::wstring& GetModelDir() const;
+	const std::wstring& GetModelFileName() const;
+
 private:
 	std::wstring m_ModelDir;       // absolute model path
 	std::wstring m_ModelFileName;  // model file name
@@ -127,11 +162,18 @@ private:
 	ICubismModelSetting* m_ModelSetting;
 	TextureManager m_TextureManager;
 
-	CubismMatrix44 m_ProjectionMatrix;
-
 	ParameterBinding m_ParameterBinding;
 	DefaultParameter::ParametersIndex m_IndexOfDefaultParameter;
 
+	csmVector<CubismIdHandle> m_EyeBlinkIds;
+	csmVector<CubismIdHandle> m_LipSyncIds;
+
+	std::vector<ModelMotion> m_Expressions;
+	std::vector<ModelMotion> m_Motions;
+
+	std::map<ACubismMotion*, CubismMotionQueueEntryHandle> m_MapActiveExpression;
+	
+	CubismMatrix44 m_ProjectionMatrix;
 	float m_ModelScale;
 	float m_ModelTranslateX;
 	float m_ModelTranslateY;

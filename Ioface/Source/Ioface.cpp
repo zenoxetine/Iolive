@@ -3,11 +3,13 @@
 #include <cmath>
 #include <thread>
 #include <chrono>
+#include <iostream>
 
 #define L2Norm(p1, p2) std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2))
+#define INGFO std::cout << "[IOFACE][DEBUG] "
 
 Ioface::Ioface()
-	: m_Initialized(false), m_IsDetected(false), m_DoDisplayErrors(true), m_WaitingFaceHasPrinted(false)
+	: m_Initialized(false), m_IsDetected(false), m_DoDisplayErrors(true), m_WaitingFaceHasPrinted(false), TrackingDelay(0)
 {
 }
 
@@ -32,11 +34,11 @@ void Ioface::Init()
 
 	if (m_FaceAlignment->Initialized())
 	{
-		m_LogFunc("[Ioface][I] IntraFace initialized\n");
+		LoggingFunction("[Ioface][I] IntraFace initialized\n");
 	}
 	else
 	{
-		m_LogFunc("[Ioface][E] Can't initialize IntraFace!\n");
+		LoggingFunction("[Ioface][E] Can't initialize IntraFace!\n");
 		error = true;
 	}
 
@@ -44,11 +46,11 @@ void Ioface::Init()
 	if (m_FaceCascade.empty())
 	{
 		error = true;
-		m_LogFunc("[Ioface][E] Can't load face detection model!\n");
+		LoggingFunction("[Ioface][E] Can't load face detection model!\n");
 	}
 	else
 	{
-		m_LogFunc("[Ioface][I] Face detection model loaded\n");
+		LoggingFunction("[Ioface][I] Face detection model loaded\n");
 	}
 
 	m_Initialized = !error;
@@ -66,7 +68,7 @@ bool Ioface::OpenCamera(int deviceId)
 
 	if (!testSuccess || testFrame.empty())
 	{
-		m_LogFunc("[Ioface][E] Can't read new frame from camera!\n");
+		LoggingFunction("[Ioface][E] Can't read new frame from camera!\n");
 
 		m_Cap.release();
 		return false;
@@ -75,14 +77,6 @@ bool Ioface::OpenCamera(int deviceId)
 	{
 		return m_Cap.isOpened();
 	}
-}
-
-void Ioface::PrintIofaceStatus()
-{
-	m_LogFunc("Status:\n\tCamera opened: %d\n", m_Cap.isOpened());
-	m_LogFunc("\tFrame not empty: %d\n", !m_Frame.empty());
-	m_LogFunc("\tIntraface initialized: %d\n", m_FaceAlignment->Initialized());
-	m_LogFunc("\tFace detection model loaded: %d\n", !m_FaceCascade.empty());
 }
 
 void Ioface::CloseCamera()
@@ -95,6 +89,14 @@ void Ioface::CloseCamera()
 
 	if (!m_Frame.empty())
 		m_Frame.release();
+}
+
+void Ioface::PrintIofaceStatus()
+{
+	LoggingFunction("Status:\n\tCamera opened: %d\n", m_Cap.isOpened());
+	LoggingFunction("\tFrame not empty: %d\n", !m_Frame.empty());
+	LoggingFunction("\tIntraface initialized: %d\n", m_FaceAlignment->Initialized());
+	LoggingFunction("\tFace detection model loaded: %d\n", !m_FaceCascade.empty());
 }
 
 void Ioface::UpdateAll()
@@ -112,7 +114,7 @@ void Ioface::UpdateFrame()
 	else
 	{
 		if (m_DoDisplayErrors)
-			m_LogFunc("[Ioface][E] Can't take new frame from camera because it's not opened\n");
+			LoggingFunction("[Ioface][E] Can't take new frame from camera because it's not opened\n");
 	}
 }
 
@@ -124,7 +126,7 @@ void Ioface::UpdateParameters()
 		if (m_DoDisplayErrors)
 		{
 			m_DoDisplayErrors = false;
-			m_LogFunc("[Ioface][E] Block updating parameters!\n");
+			LoggingFunction("[Ioface][E] Block updating parameters!\n");
 			PrintIofaceStatus();
 		}
 		return;
@@ -140,18 +142,23 @@ void Ioface::UpdateParameters()
 		if (m_FaceAlignment->Track(m_Frame, m_Landmarks, trackedLandmarks, score) == INTRAFACE::IF_OK)
 		{
 			m_Landmarks = trackedLandmarks;
+
+			if (TrackingDelay > 0)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(TrackingDelay));
+			}
 		}
 	}
 	else
 	{
 		if (!m_WaitingFaceHasPrinted)
 		{
-			m_LogFunc("[Ioface][I] Waiting for a face ...\n");
+			LoggingFunction("[Ioface][I] Waiting for a face ...\n");
 			m_WaitingFaceHasPrinted = true;
 		}
 
 		auto faceRect = DetectFirstFace(m_Frame);
-		if (!faceRect.has_value()) // check if there's a face in the frame
+		if (!faceRect.has_value()) // check is there's a face in the frame
 		{
 			// sleep a little bit, because detecting face again and again, is heavy.
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -167,7 +174,7 @@ void Ioface::UpdateParameters()
 			if (score > 0.5)
 			{
 				// log
-				m_LogFunc("[Ioface][I] Found face!\n\n");
+				LoggingFunction("[Ioface][I] Found face!\n\n");
 				m_WaitingFaceHasPrinted = false;
 			}
 		}
@@ -193,6 +200,53 @@ void Ioface::DoUpdateParameters()
 	EstimateHeadPose(m_HeadPose);
 
 	EstimateFeatureDistance(m_Landmarks);
+
+	/* // face tracking experiment
+	if (AngleZ > -10.0f && AngleZ < 10.0f)
+	{
+		if (LeftEAR > 0.21f)
+		{
+			int l_eye_hlx = m_Landmarks.at<float>(0, 19) * 0.99f;
+			int l_eye_hrx = m_Landmarks.at<float>(0, 22) * 1.01f;
+			int l_eye_top_ly = m_Landmarks.at<float>(1, 20) * 0.98f;
+			int l_eye_bottom_ly = m_Landmarks.at<float>(1, 24) * 1.02f;
+
+			cv::Mat leftEyeColored = cv::Mat(m_Frame, cv::Rect(l_eye_hlx, l_eye_top_ly, l_eye_hrx - l_eye_hlx, l_eye_bottom_ly - l_eye_top_ly)).clone();
+			cv::resize(leftEyeColored, leftEyeColored, cv::Size(115*2.0f, 50*2.0f));
+
+			leftEyeColored = cv::Mat(leftEyeColored, cv::Rect(26*2, 5*2, (115-32)*2, (50-8)*2));
+
+			cv::Mat leftEyeGray;
+			cv::cvtColor(leftEyeColored, leftEyeGray, cv::COLOR_BGR2GRAY);
+
+			cv::threshold(leftEyeGray, leftEyeGray, 24, 255, cv::THRESH_BINARY_INV);
+			cv::erode(leftEyeGray, leftEyeGray, 0, cv::Point(-1, -1), 2);
+			cv::dilate(leftEyeGray, leftEyeGray, 0, cv::Point(-1, -1), 4);
+			cv::medianBlur(leftEyeGray, leftEyeGray, 3);
+
+			std::vector<std::vector<cv::Point>> contours;
+			std::vector<cv::Vec4i> hierarchy;
+			cv::findContours(leftEyeGray, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+			if (contours.size() > 0)
+			{
+				double maxArea = 0;
+				int maxAreaContourId = -1;
+				for (int j = 0; j < contours.size(); j++)
+				{
+					double newArea = cv::contourArea(contours.at(j));
+					if (newArea > maxArea) {
+						maxArea = newArea;
+						maxAreaContourId = j;
+					}
+				}
+
+				drawContours(leftEyeColored, std::vector<std::vector<cv::Point>>(1, contours[maxAreaContourId]), -1, cv::Scalar(0, 255, 0), 1, cv::LINE_8);
+
+				cv::imshow("Left eye colored", leftEyeColored);
+				cv::imshow("Left eye gray", leftEyeGray);
+			}
+		}
+	}*/
 }
 
 void Ioface::EstimateHeadPose(const INTRAFACE::HeadPose& headPose)
@@ -288,13 +342,27 @@ std::tuple<float, float> Ioface::GetEyeAspectRatio(const cv::Mat& landmarks)
 	return { _leftEAR, _rightEAR };
 }
 
-void Ioface::ShowFrame()
+void Ioface::ShowFrame(bool showFace)
 {
 	if (!m_Cap.isOpened() || m_Frame.empty()) return;
 	
-	DrawLandmarks(m_Frame);
+	cv::Mat showedFrame;
 
-	cv::imshow("Ioface frame", m_Frame);
+	if (showFace)
+	{
+		showedFrame = m_Frame;
+	}
+	else
+	{
+		showedFrame = cv::Mat(cv::Size(m_Frame.cols, m_Frame.rows), CV_8UC1, cv::Scalar(255, 255, 255));
+	}
+	
+	DrawLandmarks(showedFrame,
+		showFace ? cv::Scalar(0, 255, 0) // green
+				 : cv::Scalar(0, 0, 0)   // black
+	);
+
+	cv::imshow("Showing Frame", showedFrame);
 	cv::waitKey(1); // one milliseconds
 }
 
@@ -319,7 +387,7 @@ std::optional<cv::Rect> Ioface::DetectFirstFace(const cv::Mat& image)
 		return std::nullopt;
 }
 
-void Ioface::DrawLandmarks(cv::Mat& frame)
+void Ioface::DrawLandmarks(cv::Mat& frame, const cv::Scalar& pointColor)
 {
 	if (!m_Landmarks.empty() && m_IsDetected)
 	{
@@ -328,7 +396,7 @@ void Ioface::DrawLandmarks(cv::Mat& frame)
 		{
 			cv::circle(frame,
 				cv::Point((int)m_Landmarks.at<float>(0, i), (int)m_Landmarks.at<float>(1, i)),
-				1, cv::Scalar(0, 255, 0), -1
+				1, pointColor, -1
 			);
 		}
 	}

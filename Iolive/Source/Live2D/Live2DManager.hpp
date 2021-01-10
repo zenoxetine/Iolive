@@ -2,9 +2,6 @@
 
 #include <CubismFramework.hpp>
 #include <ICubismModelSetting.hpp>
-#include <map>
-#include <vector>
-#include <array>
 #include "Model2D.hpp"
 #include "CubismSamples/LAppAllocator.hpp"
 

@@ -1,13 +1,25 @@
 #pragma once
 
+#define IOLIVE_GITHUB "https://github.com/wahyuandhika/Iolive"
+#define IOLIVE_MAJOR_VERSION_STR "21"
+#define IOLIVE_MINOR_VERSION_STR "01"
+
+#define WINDOW_WIDTH 640
+#define WINDOW_HEIGHT 700
+#define WINDOW_TITLE "Iolive"
+
 #include "MainGui.hpp"
 #include "Window.hpp"
 #include "Ioface/Ioface.hpp"
 #include "Live2D/Model2D.hpp"
+#include "Utility/JsonManager.hpp"
 #include <thread>
 #include <mutex>
 
 namespace Iolive {
+	constexpr double kCurrentJsonVersion = 0.1;
+	constexpr wchar_t* kSettingsFileName = L"Iolive.settings.json";
+
 	class UserModel
 	{
 	public:
@@ -20,7 +32,7 @@ namespace Iolive {
 			if (newModel)
 				if (newModel->IsInitialized())
 				{
-					if (m_Model2D) DeleteModel();
+					DeleteModel();
 					m_Model2D = newModel;
 				}
 		}
@@ -81,6 +93,11 @@ namespace Iolive {
 		bool OpenCamera();
 		void CloseCamera();
 
+		void SetModel(Model2D* model);
+		void CreateNewHotkeys(const wchar_t* outFilePath);
+		void LoadHotkeys();
+		void OnHotkeysSaved(int index, ModelMotion* motion);
+
 		void DoOptimizeParameters();
 		void BindDefaultParametersWithFace();
 		void BindDefaultParametersWithGui();
@@ -103,8 +120,10 @@ namespace Iolive {
 		UserModel m_UserModel;
 
 		// face capturing thread
-		std::thread faceCaptureThread;
+		std::thread m_FaceCaptureThread;
 		
+		JsonManager m_JsonManager;
+
 		// Optimized parameter for Live2D model
 		DefaultParameter::ParametersValue OptimizedParameter = {};
 

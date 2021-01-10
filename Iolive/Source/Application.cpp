@@ -5,18 +5,16 @@
 #include "Utility/WindowsAPI.hpp"
 #include "Utility/Logger.hpp"
 #include "Utility/MathUtils.hpp"
-
-#define WINDOW_WIDTH 560
-#define WINDOW_HEIGHT 700
-#define WINDOW_TITLE "Iolive"
+#include <string>
 
 namespace Iolive {
 	Application::Application()
 		: m_Window(Window::Create(WINDOW_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT)),
 		m_Ioface(Ioface()),
+		m_JsonManager(JsonManager()),
 		flags_StopCapture(true)
 	{
-		auto _stackElapsed = StackLogger([](float elapsed_ms) {
+		auto _stackElapsed = Logger::StackCallback([](float elapsed_ms) {
 			ExampleAppLog::AddLogf("[Iolive][I] App initialization passed: %.fms\n", elapsed_ms);
 		});
 
@@ -30,7 +28,7 @@ namespace Iolive {
 
 		MainGui::InitializeImGui(m_Window->GetGlfwWindow());
 
-		m_Ioface.SetLogFunction(&(ExampleAppLog::AddLogf));
+		m_Ioface.LoggingFunction = &(ExampleAppLog::AddLogf);
 		m_Ioface.Init();
 	}
 
@@ -66,7 +64,21 @@ namespace Iolive {
 			DoOptimizeParameters();
 
 		if (m_UserModel.IsModelInitialized())
+		{
+			ModelMotion* motionFromHotkey = MainGui::Get().GuiHotkeys.Update();
+			if (motionFromHotkey != nullptr)
+			{
+				ExampleAppLog::AddLogf("[Application][I] Starting/Stoping %s: %s\n",
+					motionFromHotkey->motionType == ModelMotion::MotionType::Expression ? "expression" : "motion",
+					motionFromHotkey->name
+				);
+
+				// Hotkey activated
+				m_UserModel.GetModel2D()->StartMotion(motionFromHotkey);
+			}
+
 			m_UserModel.GetModel2D()->OnUpdate(m_Window->GetDeltaTime());
+		}
 	}
 	
 	void Application::OnRender()
@@ -82,8 +94,10 @@ namespace Iolive {
 		MainGui::Get().Draw(this);
 		
 		if (m_UserModel.IsModelInitialized())
+		{
 			m_UserModel.GetModel2D()->OnDraw(width, height);
-		
+		}
+
 		m_Window->SwapWindow();
 	}
 
@@ -97,7 +111,9 @@ namespace Iolive {
 			if (MainGui::Get().Checkbox_ShowFrame.IsChecked())
 			{
 				frameClosed = false;
-				m_Ioface.ShowFrame();
+
+				bool showFace = MainGui::Get().Checkbox_ShowFace.IsChecked();
+				m_Ioface.ShowFrame(showFace);
 			}
 			else if(!frameClosed)
 			{
@@ -107,7 +123,9 @@ namespace Iolive {
 		}
 		
 		if (!frameClosed)
+		{
 			m_Ioface.CloseAllFrame();
+		}
 	}
 
 	bool Application::OpenCamera()
@@ -120,7 +138,7 @@ namespace Iolive {
 
 			// create separate thread for face capture loop
 			flags_StopCapture = false;
-			faceCaptureThread = std::thread(&Application::FaceCaptureLoop, this);
+			m_FaceCaptureThread = std::thread(&Application::FaceCaptureLoop, this);
 			ExampleAppLog::AddLog("[Iolive][I] Face capture thread created\n\n");
 
 			if (m_UserModel.IsModelInitialized())
@@ -139,11 +157,11 @@ namespace Iolive {
 	
 	void Application::CloseCamera()
 	{
-		// tell faceCaptureThread to break the loop
+		// tell face capture thread to break the loop
 		ExampleAppLog::AddLog("[Iolive][I] Stopping face capture thread\n");
 		flags_StopCapture = true;
-		if (faceCaptureThread.joinable())
-			faceCaptureThread.join();
+		if (m_FaceCaptureThread.joinable())
+			m_FaceCaptureThread.join();
 		
 		m_Ioface.CloseCamera();
 		ExampleAppLog::AddLog("[Iolive][I] Camera closed\n\n");
@@ -152,6 +170,215 @@ namespace Iolive {
 		{
 			// bind model parameters with the gui
 			BindDefaultParametersWithGui();
+		}
+	}
+
+	void Application::SetModel(Model2D* model)
+	{
+		m_UserModel.SetModel(model);
+
+		auto& parameterGui = MainGui::Get().ParameterGUI;
+		parameterGui.SetModel(model);
+
+		// set parameter binding between parameterGui and live2d model
+		for (size_t paramIndex = 0; paramIndex < model->GetParameterCount(); paramIndex++)
+		{
+			model->SetParameterBindingAt(paramIndex, parameterGui.GetPtrValueByIndex(paramIndex));
+		}
+
+		if (m_Ioface.IsCameraOpened())
+		{
+			// there's a new model and camera opened
+			// but model parameter wasn't binded with face capture. Bind it now
+			BindDefaultParametersWithFace();
+		}
+
+		// Load iolive's settings file
+		std::wstring ioliveSettingsPath = model->GetModelDir() + kSettingsFileName;
+		bool jsonReaded = m_JsonManager.ReadJson(ioliveSettingsPath.c_str());
+		if (jsonReaded)
+		{
+			// read hotkeys from json
+			auto& document = m_JsonManager.document;
+
+			if (document.HasMember("version"))
+			{
+				double jsonVersion = document["version"].GetDouble();
+				if (jsonVersion == kCurrentJsonVersion)
+				{
+					LoadHotkeys();
+					return;
+				}
+			}
+		}
+
+		CreateNewHotkeys(ioliveSettingsPath.c_str());
+	}
+
+	void Application::CreateNewHotkeys(const wchar_t* outFilePath)
+	{
+		auto& guiHotkeys = MainGui::Get().GuiHotkeys;
+		guiHotkeys.ClearAll();
+
+		Model2D* model = m_UserModel.GetModel2D();
+
+		auto& document = m_JsonManager.document;
+		document.SetObject(); // reset
+
+		auto& docAllocator = document.GetAllocator();
+
+		document.AddMember("version", kCurrentJsonVersion, docAllocator);
+
+		rapidjson::Value hotkeysArray(rapidjson::kArrayType);
+
+		// Bind model motion with hotkeys
+		auto& modelMotions = model->GetMotions();
+		for (int i = 0; i < modelMotions.size(); i++)
+		{
+			unsigned short numKey = '\0';
+			if (i < 9)
+				numKey = i + 1 + 48; // 1 - 9
+
+			HotkeyItem hotKeyItem({ numKey, '\0', '\0' });
+			guiHotkeys.AddHotkeysAndItem(hotKeyItem, &modelMotions[i]);
+		}
+
+		// Bind model expression with hotkeys
+		auto& modelExpressions = model->GetExpressions();
+		for (int i = 0; i < modelExpressions.size(); i++)
+		{
+			unsigned short numKey = '\0';
+			switch (i)
+			{
+			case 0:
+				numKey = 'Z'; break;
+			case 1:
+				numKey = 'X'; break;
+			case 2:
+				numKey = 'C'; break;
+			case 3:
+				numKey = 'V'; break;
+			default:
+				numKey = '\0';
+			}
+
+			HotkeyItem hotKeyItem({ numKey, '\0', '\0' });
+			guiHotkeys.AddHotkeysAndItem(hotKeyItem, &modelExpressions[i]);
+		}
+
+		// Add hotkeys to the json
+		for (int i = 0; i < guiHotkeys.Size(); i++)
+		{
+			rapidjson::Value objHotkeys;
+			objHotkeys.SetObject();
+
+			auto modelMotion = guiHotkeys.GetItemAtIndex(i);
+			objHotkeys.AddMember("type", (int)(modelMotion->motionType), docAllocator);
+			objHotkeys.AddMember("id", modelMotion->id, docAllocator);
+
+			rapidjson::Value keysArray(rapidjson::kArrayType);
+
+			auto& hotkeys = guiHotkeys.GetHotkeysAtIndex(i);
+			for (auto& key : hotkeys)
+			{
+				if (key == '\0') break;
+				keysArray.PushBack(key, docAllocator);
+			}
+
+			objHotkeys.AddMember("keys", keysArray, docAllocator);
+
+			hotkeysArray.PushBack(objHotkeys, docAllocator);
+		}
+
+		document.AddMember("hotkeys", hotkeysArray, docAllocator);
+
+		JsonManager::CreateNewJsonFile(outFilePath, document);
+	}
+
+	void Application::LoadHotkeys()
+	{
+		auto& guiHotkeys = MainGui::Get().GuiHotkeys;
+		auto& document = m_JsonManager.document;
+
+		Model2D* model = m_UserModel.GetModel2D();
+
+		if (document.HasMember("hotkeys"))
+		{
+			for (auto& hotkeysObj : document["hotkeys"].GetArray())
+			{
+				int motionId = hotkeysObj["id"].GetInt();
+				ModelMotion::MotionType motionType = static_cast<ModelMotion::MotionType>(hotkeysObj["type"].GetInt());
+
+				// Parse keys
+				HotkeyItem hotkeyItem;
+				int keySizeExist = 0;
+				for (auto& keys : hotkeysObj["keys"].GetArray())
+				{
+					hotkeyItem[keySizeExist] = keys.GetUint();
+					keySizeExist++;
+				}
+
+				if (keySizeExist < hotkeyItem.size())
+				{
+					for (int i = hotkeyItem.size() - 1; i >= keySizeExist; i--)
+					{
+						hotkeyItem[i] = '\0';
+					}
+				}
+
+				bool foundOnMotion = false;
+				for (auto& motion : model->GetMotions()) // search in motions
+				{
+					if (motionId == motion.id && motionType == motion.motionType)
+					{
+						guiHotkeys.AddHotkeysAndItem(hotkeyItem, &motion);
+						foundOnMotion = true;
+						break;
+					}
+				}
+
+				if (!foundOnMotion)
+				{
+					// Repeaating code isn't good.
+					for (auto& motion : model->GetExpressions()) // search in expressions
+					{
+						if (motionId == motion.id && motionType == motion.motionType)
+						{
+							guiHotkeys.AddHotkeysAndItem(hotkeyItem, &motion);
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void Application::OnHotkeysSaved(int index, ModelMotion* motion)
+	{
+		auto& guiHotkeys = MainGui::Get().GuiHotkeys;
+		auto& document = m_JsonManager.document;
+		auto& docAllocator = document.GetAllocator();
+
+		Model2D* model = m_UserModel.GetModel2D();
+		for (auto& hotkeysObj : document["hotkeys"].GetArray())
+		{
+			if (static_cast<ModelMotion::MotionType>(hotkeysObj["type"].GetInt()) == motion->motionType &&
+				hotkeysObj["id"].GetInt() == motion->id)
+			{
+				// clear previous keys
+				hotkeysObj["keys"].Clear();
+				
+				// Set new keys
+				HotkeyItem& hotkeyItem = guiHotkeys.GetHotkeysAtIndex(index);
+				for (int keysCount = 0; keysCount < MAX_KEYS; keysCount++)
+				{
+					hotkeysObj["keys"].PushBack(hotkeyItem[keysCount], docAllocator);
+				}
+
+				m_JsonManager.SaveJson((m_UserModel.GetModel2D()->GetModelDir() + kSettingsFileName).c_str());
+
+				break;
+			}
 		}
 	}
 
@@ -201,7 +428,7 @@ namespace Iolive {
 					lastY = ypos;
 
 					int wWidth, wHeight;
-					Window::Get()->GetWindowSize(&wWidth, &wHeight);
+					app->m_Window->GetWindowSize(&wWidth, &wHeight);
 
 					xDist = MathUtils::Normalize(xDist, 0.f, wWidth / 2);
 					yDist = MathUtils::Normalize(yDist, 0.f, wHeight / 2);
@@ -234,9 +461,9 @@ namespace Iolive {
 		/* Update Parameters from Ioface */
 
 		float deltaTime = static_cast<float>(m_Window->GetDeltaTime());
-		#define SMOOTH_SLOW(start, end) MathUtils::Lerp(start, end, deltaTime * 5.f)
-		#define SMOOTH_MEDIUM(start, end) MathUtils::Lerp(start, end, deltaTime * 10.f)
-		#define SMOOTH_FAST(start, end) MathUtils::Lerp(start, end, deltaTime * 15.f)
+		#define SMOOTH_SLOW(start, end) MathUtils::Lerp(start, end, deltaTime * 4.f)
+		#define SMOOTH_MEDIUM(start, end) MathUtils::Lerp(start, end, deltaTime * 8.f)
+		#define SMOOTH_FAST(start, end) MathUtils::Lerp(start, end, deltaTime * 16.f)
 
 		// ParamAngle
 		OptimizedParameter.ParamAngleX = SMOOTH_SLOW(OptimizedParameter.ParamAngleX, m_Ioface.AngleX);
@@ -259,17 +486,17 @@ namespace Iolive {
 		if (MainGui::Get().Checkbox_EqualizeEyes.IsChecked())
 		{
 			// Equalize EyeOpenY Left & Right value
-			float normalizedEAR = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.EAR, m_Ioface.DistScale * 0.13f, m_Ioface.DistScale * 0.24f);
+			float normalizedEAR = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.EAR, m_Ioface.DistScale * 0.11f, m_Ioface.DistScale * 0.26f);
 			OptimizedParameter.ParamEyeLOpen = SMOOTH_MEDIUM(OptimizedParameter.ParamEyeLOpen, normalizedEAR);
 			OptimizedParameter.ParamEyeROpen = OptimizedParameter.ParamEyeLOpen; // same
 		}
 		else
 		{
 			// EyeOpenLY
-			float normalizedLeftEAR = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.LeftEAR, m_Ioface.DistScale * 0.13f, m_Ioface.DistScale * 0.24f);
+			float normalizedLeftEAR = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.LeftEAR, m_Ioface.DistScale * 0.11f, m_Ioface.DistScale * 0.26f);
 			OptimizedParameter.ParamEyeLOpen = SMOOTH_MEDIUM(OptimizedParameter.ParamEyeLOpen, normalizedLeftEAR);
 			// EyeOpenRY
-			float normalizedRightEAR = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.RightEAR, m_Ioface.DistScale * 0.13f, m_Ioface.DistScale * 0.24f);
+			float normalizedRightEAR = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.RightEAR, m_Ioface.DistScale * 0.11f, m_Ioface.DistScale * 0.26f);
 			OptimizedParameter.ParamEyeROpen = SMOOTH_MEDIUM(OptimizedParameter.ParamEyeROpen, normalizedRightEAR);
 		}
 
@@ -285,8 +512,8 @@ namespace Iolive {
 		OptimizedParameter.ParamEyeRSmile = OptimizedParameter.ParamEyeForm;
 
 		// EyeBrowY, left & right value will be equal
-		float optBrowLY = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.EyeBrowLY, 44.0f, 53.0f);
-		float optBrowRY = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.EyeBrowRY, 44.0f, 53.0f);
+		float optBrowLY = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.EyeBrowLY, 42.0f, 54.0f);
+		float optBrowRY = MathUtils::Normalize(m_Ioface.DistScale * m_Ioface.EyeBrowRY, 42.0f, 54.0f);
 		float avgBrow = (optBrowLY + optBrowRY) / 2.f;
 		OptimizedParameter.ParamBrowLY = SMOOTH_SLOW(OptimizedParameter.ParamBrowLY, avgBrow);
 		OptimizedParameter.ParamBrowRY = OptimizedParameter.ParamBrowLY; // same
@@ -311,8 +538,8 @@ namespace Iolive {
 			int mouseX, mouseY;
 			if (WindowsAPI::GetMousePosition(&mouseX, &mouseY))
 			{
-				eyeBallX = MathUtils::Normalize(mouseX, screenWidth / 2, screenWidth) / 1.5f;
-				eyeBallY = MathUtils::Normalize(mouseY, screenHeight / 2, screenHeight) / 1.5f;
+				eyeBallX = MathUtils::Normalize(mouseX, screenWidth / 2, screenWidth) / 1.337f;
+				eyeBallY = MathUtils::Normalize(mouseY, screenHeight / 2, screenHeight) / 1.337f;
 			}
 		}
 		OptimizedParameter.ParamEyeBallX = eyeBallX;
@@ -377,7 +604,7 @@ namespace Iolive {
 		Model2D* model = m_UserModel.GetModel2D();
 		const auto& paramIndex = model->GetParameterIndex();
 
-		ParameterScene paramGui = MainGui::Get().ParameterGUI;
+		ParameterScene& paramGui = MainGui::Get().ParameterGUI;
 
 		// check is parameter exist?, then bind it
 		if (paramIndex.ParamAngleX > -1)

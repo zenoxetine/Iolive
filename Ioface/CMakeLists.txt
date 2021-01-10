@@ -16,6 +16,7 @@ set(OPENCV_LIBRARIES
 	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_highgui320${dFLAGS}.lib
 	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_objdetect320${dFLAGS}.lib
 	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_core320${dFLAGS}.lib
+	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_features2d320${dFLAGS}.lib
 	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_imgproc320${dFLAGS}.lib
 	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_videoio320${dFLAGS}.lib
 	${OPENCV_DIR}/lib/${CMAKE_BUILD_TYPE}/opencv_calib3d320${dFLAGS}.lib

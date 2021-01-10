@@ -6,6 +6,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/objdetect.hpp>
 #include <opencv2/calib3d.hpp>
+#include <opencv2/features2d.hpp>
 #include "intraface/FaceAlignment.h"
 #include "intraface/XXDescriptor.h"
 #include <memory>
@@ -35,10 +36,9 @@ public:
 
 	void UpdateAll();
 
-	void ShowFrame();
+	void ShowFrame(bool showFace = false);
 	void CloseAllFrame();
 
-	void SetLogFunction(void(*fpLog)(const char*, ...)) { if (fpLog) m_LogFunc = fpLog; }
 	void PrintIofaceStatus();
 
 private:
@@ -47,7 +47,7 @@ private:
 	void DoUpdateParameters();
 	
 	void DrawPose(float lineL);
-	void DrawLandmarks(cv::Mat& frame);
+	void DrawLandmarks(cv::Mat& frame, const cv::Scalar& pointColor = cv::Scalar(0, 255, 0));
 
 	std::optional<cv::Rect> DetectFirstFace(const cv::Mat& image);
 	void EstimateHeadPose(const INTRAFACE::HeadPose& headPose);
@@ -55,6 +55,12 @@ private:
 	std::tuple<float, float> GetEyeAspectRatio(const cv::Mat& landmarks);
 
 public:
+	// log function
+	void(*LoggingFunction)(const char*, ...) = [](const char*, ...) {};
+	
+	// tracking delay in milliseconds
+	int TrackingDelay;
+
 	// parameter properties
 	float DistScale = 1.f;
 	float AngleX = 0.0f;
@@ -81,9 +87,6 @@ private:
 	INTRAFACE::HeadPose m_HeadPose;
 
 	cv::Mat m_Landmarks; // 49 facial landmarks
-
-	// log function
-	void(*m_LogFunc)(const char*, ...) = [](const char*, ...) { };
 
 	// flags
 	bool m_IsDetected;
