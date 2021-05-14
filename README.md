@@ -1,3 +1,6 @@
+##### This project won't get update until an unspecified time.
+<hr>
+
 # Iolive
 
 <img src="https://i.imgur.com/gTPARWp.png" width="100" height="100"/>
@@ -15,7 +18,7 @@ this project can be built using MSVC 141 & 142, and cmake version > 3.13
 * [GLEW](http://glew.sourceforge.net/)
 * [Dear ImGui](https://github.com/ocornut/imgui/)
 * [RapidJSON](https://github.com/Tencent/rapidjson/)
-* [CubismNativeFramework](https://github.com/Live2D/CubismNativeFramework) (as modiffied submodule)
+* [CubismNativeFramework](https://github.com/Live2D/CubismNativeFramework) (modiffied)
 * [Live2DCubismCore](https://www.live2d.com/en/download/cubism-sdk/download-native/)<br/>
 
 For more information, look in the [Vendor/](https://github.com/wahyuandhika/Iolive/tree/main/Iolive/Vendor) directory
